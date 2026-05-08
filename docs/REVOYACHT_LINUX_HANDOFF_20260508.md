@@ -21,6 +21,12 @@ main
 Current expected commit:
 
 ```text
+7c7a733 Add Linux continuation handoff
+```
+
+Previous SO439 implementation commit:
+
+```text
 5db8dd1 Add SO439 sailing ready-made template
 ```
 
@@ -45,7 +51,7 @@ git log --oneline -3
 Expected top commit:
 
 ```text
-5db8dd1 Add SO439 sailing ready-made template
+7c7a733 Add Linux continuation handoff
 ```
 
 ## Install GitHub CLI On Linux
@@ -140,7 +146,7 @@ The matching private/public file pairs should have the same hashes.
 The latest completed task:
 
 - Full checkpoint `stable 08/05/26` was created on Windows/Google Drive before this change.
-- GitHub `main` was updated to `5db8dd1`.
+- SO439 code was added in `5db8dd1`; current GitHub `main` is `7c7a733` with this Linux continuation handoff.
 - Added `Jeanneau SO439 - 2023` as the second Structure Template.
 - Template key: `jeanneau_sun_odyssey_439`.
 - Category: sailing yacht / monohull / Bermudan sloop / fractional sloop.
@@ -227,4 +233,3 @@ The next engineering step should be template/ready-made synchronization policy:
 - keep this as an admin/developer mode only;
 - users should work with yacht instances, not directly mutate locked system templates;
 - owner/user changes should live in a custom layer, not inside the locked template base.
-

@@ -46,8 +46,26 @@ https://brkovic.ltd/yacht-flex-demo/?v=20260508-v40d3d5l-so439-template
 Current version string:
 
 ```text
-20260508-v40d3d5l-so439-template
+20260508-v40d3d5o-so439-deck-stack
 ```
+
+Current Linux/GitHub baseline:
+
+```text
+GitHub main: 7c7a733 Add Linux continuation handoff
+Linux working branch: work/builder-v2-next-20260508
+Live/local/private/public assets are synchronized on 20260508-v40d3d5l-so439-template.
+```
+
+Local WIP patch after that baseline:
+
+```text
+20260508-v40d3d5m-template-overlay-guard
+20260508-v40d3d5n-ready-sailing-rig-diagram
+20260508-v40d3d5o-so439-deck-stack
+```
+
+These patches are local/private/public in this Linux workspace until explicitly deployed live. `d3d5m` keeps locked Structure Templates as the source template and stores user additions as a yacht-copy overlay. `d3d5n` renders SO439 ready-made sailing rig sections with the same Bermudan sloop diagram as Builder V2: AFT SAILS left, FORWARD SAILS right, TOP/SPAR/RIGS in the center. `d3d5o` rebuilds the SO439 ready-made hull/deck stack bottom-up: Underwater Part, Bilge Space, Lower Deck, HULL marker, Main Deck.
 
 Main files:
 
@@ -1233,7 +1251,7 @@ After entering any Builder deck/hull/area/equipment/sailing-root/sailing-item sc
 ## 24. Short continuation prompt
 
 ```text
-Continue RevoYacht / Yacht Flex Deck Builder V2 from version 20260508-v40d3d5k-deep-layout-polish.
+Continue RevoYacht / Yacht Flex Deck Builder V2 from version 20260508-v40d3d5o-so439-deck-stack.
 
 Current focus: Builder V2 for motor monohull/catamaran/trimaran before sailing.
 
