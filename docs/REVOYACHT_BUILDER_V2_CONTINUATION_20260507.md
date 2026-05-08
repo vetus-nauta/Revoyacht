@@ -39,13 +39,13 @@ Sailing builder comes later as a specialization of the same builder standard, no
 Current live demo:
 
 ```text
-https://brkovic.ltd/yacht-flex-demo/?v=20260507-v40d3d4g-builder-deck-badges
+https://brkovic.ltd/yacht-flex-demo/?v=20260508-v40d3d4h-hull-marker-buttons
 ```
 
 Current version string:
 
 ```text
-20260507-v40d3d4g-builder-deck-badges
+20260508-v40d3d4h-hull-marker-buttons
 ```
 
 Main files:
@@ -322,6 +322,7 @@ V40-D3D-4D Builder object controls live in action row
 V40-D3D-4E Builder library modal matches ready standard
 V40-D3D-4F Builder root brand and yacht action card
 V40-D3D-4G Builder deck item badges
+V40-D3D-4H Builder hull marker buttons
 ```
 
 ## 7. Latest completed work
@@ -350,15 +351,20 @@ Changed Builder V2 root header from `Builder V2` to `REVOYACHT`, added product s
 
 Reworked Builder V2 root deck count badges for shared and hull-specific decks. Counts now render as `Empty`, `1 item`, or `N items` instead of raw always-plural `N items`.
 
+### D3D-4H
+
+Reworked Builder V2 root hull marker cards into clear clickable buttons. Removed the inner narrow `Hull` badge/card, kept one attached `HULL` tab above each card, and centered the professional hull labels `PORT`, `MAIN HULL`, and `STBD`.
+
 Latest backup stamp:
 
 ```text
-20260507-231840
+20260508-063454
 ```
 
 Earlier relevant backup stamps:
 
 ```text
+20260507-231840  backup before D3D-4G
 20260507-231220  backup before D3D-4F
 20260507-225321  backup before D3D-4E
 20260507-224313  backup before D3D-4D
@@ -368,27 +374,27 @@ Earlier relevant backup stamps:
 
 ## 8. Verification already done
 
-For D3D-4G:
+For D3D-4H:
 
 ```text
 private/public synced
-JS braces OK
-JS backticks OK
 node --check OK via bundled Node
+local/live upload hash compare OK
 live HTML version OK
 live JS/CSS markers OK
-Playwright mobile:
+Playwright local mobile/desktop:
   Builder root header REVOYACHT OK
   yacht name card OK
   Gallery/Camera right OK
   deck badges show 1 item / Empty OK
-Playwright desktop:
-  Builder root header REVOYACHT OK
-  yacht name card OK
-  Gallery/Camera right OK
-  deck badges show 1 item / Empty OK
+  hull marker cards show PORT / MAIN HULL / STBD OK
+  old inner Hull badge removed from hull marker cards OK
 Playwright live mobile/desktop:
-  same Builder root layout and badge flow OK
+  Builder root header REVOYACHT OK
+  yacht name card OK
+  Gallery/Camera right OK
+  deck badges show 1 item / Empty OK
+  hull marker cards show PORT / MAIN HULL / STBD OK
 ```
 
 Local screenshots:
@@ -409,6 +415,10 @@ builder-root-d3d4g-one-item-mobile.png
 builder-root-d3d4g-one-item-desktop.png
 builder-root-live-d3d4g-mobile.png
 builder-root-live-d3d4g-desktop.png
+builder-root-d3d4h-hull-buttons-v2-mobile.png
+builder-root-d3d4h-hull-buttons-v2-desktop.png
+builder-root-live-d3d4h-hull-buttons-mobile.png
+builder-root-live-d3d4h-hull-buttons-desktop.png
 shared-deck-live-d3d4c-mobile.png
 shared-deck-live-d3d4c-desktop.png
 ```
@@ -442,19 +452,20 @@ selected item state
 bottom Cancel / Add selected row
 ```
 
-The D3D-4G Builder root now follows:
+The D3D-4H Builder root now follows:
 
 ```text
 Header: REVOYACHT
 Action row: Back | Yacht name | Gallery | Camera
 Deck badge examples: Empty / 1 item / N items
+Hull marker cards: attached HULL tab + centered PORT / MAIN HULL / STBD
 ```
 
 ## 10. Next likely steps
 
 Recommended next work after user visual approval:
 
-1. User visually confirms D3D-4G Builder root header/action row/deck badges on iPhone.
+1. User visually confirms D3D-4H Builder root hull marker buttons on iPhone.
 2. Polish action row labels/icons if user says it feels cramped.
 3. Continue Area/Zone and Equipment screen standardization.
 4. Audit remaining Builder screens for the same standard before touching sailing screens.
@@ -465,7 +476,7 @@ Do not start service/cardholder implementation now.
 ## 11. Short continuation prompt
 
 ```text
-Continue RevoYacht / Yacht Flex Deck Builder V2 from version 20260507-v40d3d4g-builder-deck-badges.
+Continue RevoYacht / Yacht Flex Deck Builder V2 from version 20260508-v40d3d4h-hull-marker-buttons.
 
 Current focus: Builder V2 for motor monohull/catamaran/trimaran before sailing.
 

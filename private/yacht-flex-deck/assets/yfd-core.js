@@ -3903,11 +3903,27 @@ function openSailingBuilderRoot(rootId, push=true){
 
 /* === V40-D3D-1 Builder V2 foundation root screen 20260507 === */
 
+function getBuilderV2HullMarkerName(hullId, hullCount){
+  const count = Math.max(1, Number(hullCount || state.builderHullCount) || 1);
+  const n = parseInt(String(hullId || '').replace('hull_', ''), 10) || 1;
+
+  if(count === 1) return 'MAIN HULL';
+  if(count === 2) return n === 1 ? 'PORT' : 'STBD';
+  if(count === 3){
+    if(n === 1) return 'PORT';
+    if(n === 2) return 'MAIN HULL';
+    return 'STBD';
+  }
+
+  return String(getBuilderHullLabel(hullId) || 'Hull').toUpperCase();
+}
+
 function renderBuilderV2HullMarkerCard(hullId, label){
+  const marker = getBuilderV2HullMarkerName(hullId, state.builderHullCount || 1);
+
   return `
-    <article class="yfd-ready-tree-card yfd-ready-level-area yfd-builder-v2-hull-card" data-open-builder-hull="${hullId}" role="button" tabindex="0">
-      <strong class="yfd-ready-tree-title">${label}</strong>
-      <span class="yfd-ready-tree-badge">Hull</span>
+    <article class="yfd-builder-v2-hull-card" data-open-builder-hull="${hullId}" role="button" tabindex="0" aria-label="Open ${yfdEscapeAttr(label)}">
+      <strong class="yfd-builder-v2-hull-card-title">${marker}</strong>
     </article>
   `;
 }
@@ -3974,11 +3990,7 @@ function renderCustomBuilderScreenV2(push=true){
 
     return `
       <section class="yfd-builder-v2-hull-section">
-        <div class="yfd-builder-v2-section-head">
-          <span>Hull marker</span>
-          <strong>${label}</strong>
-        </div>
-
+        <span class="yfd-builder-v2-hull-kicker">Hull</span>
         ${renderBuilderV2HullMarkerCard(hullId, label)}
 
         <div class="yfd-builder-v2-subhead">
