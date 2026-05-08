@@ -1,0 +1,18 @@
+# Local workspace output
+*.bak
+*.bad
+*.broken
+*.tmp
+*.log
+
+# Local verification screenshots and archives
+*-mobile.png
+*-desktop.png
+ftp-*/
+public-demo-current/
+*.zip
+
+# Secrets
+.env
+*.pem
+*.key
