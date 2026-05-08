@@ -74,6 +74,12 @@ C:\Users\Vetus Nauta\Мой диск\FOR CODEX\Интернет-проекты\0
 
 Manifest notes: no credentials stored.
 
+For continuing from a Linux computer or a fresh chat, read first:
+
+```text
+docs/REVOYACHT_LINUX_HANDOFF_20260508.md
+```
+
 ## 3b. Latest delta - SO439 sailing ready-made
 
 - Added second Structure Template: `Jeanneau SO439 - 2023`.
