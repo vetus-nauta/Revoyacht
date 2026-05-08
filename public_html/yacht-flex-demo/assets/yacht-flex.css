@@ -8,6 +8,907 @@
   --muted:#8ea3b8;
   --accent:#77c7ff;
 }
+
+
+/* === V40-D3D-4J Object task boards and hidden menus 20260508 === */
+.yfd-task-board{
+  display:flex !important;
+  align-items:center !important;
+  gap:6px !important;
+  min-width:0 !important;
+  pointer-events:none !important;
+}
+
+.yfd-task-board span{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:4px !important;
+  min-width:42px !important;
+  min-height:26px !important;
+  padding:0 8px !important;
+  border-radius:999px !important;
+  border:1px solid transparent !important;
+  box-sizing:border-box !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  letter-spacing:0 !important;
+  white-space:nowrap !important;
+}
+
+.yfd-task-board b{
+  font-size:13px !important;
+  line-height:1 !important;
+}
+
+.yfd-task-board em{
+  display:none !important;
+}
+
+.yfd-task-board .is-todo{
+  border-color:rgba(255,92,92,.42) !important;
+  background:rgba(255,92,92,.13) !important;
+  color:rgba(255,218,218,.94) !important;
+}
+
+.yfd-task-board .is-progress{
+  border-color:rgba(255,206,86,.44) !important;
+  background:rgba(255,206,86,.14) !important;
+  color:rgba(255,238,178,.95) !important;
+}
+
+.yfd-task-board .is-done{
+  border-color:rgba(52,199,89,.42) !important;
+  background:rgba(52,199,89,.14) !important;
+  color:rgba(202,255,218,.95) !important;
+}
+
+.yfd-object-menu{
+  position:relative !important;
+  z-index:12 !important;
+  justify-self:end !important;
+  align-self:start !important;
+  pointer-events:auto !important;
+}
+
+.yfd-object-menu summary{
+  width:50px !important;
+  min-width:50px !important;
+  height:34px !important;
+  min-height:34px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border:1px solid rgba(142,199,255,.26) !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.075) !important;
+  color:rgba(236,246,255,.90) !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+  list-style:none !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08) !important;
+  -webkit-tap-highlight-color:transparent !important;
+}
+
+.yfd-object-menu summary::-webkit-details-marker{
+  display:none !important;
+}
+
+.yfd-object-menu summary span{
+  display:block !important;
+  font-size:19px !important;
+  line-height:1 !important;
+  transform:translateY(-2px) !important;
+}
+
+.yfd-object-menu-panel{
+  position:absolute !important;
+  top:calc(100% + 7px) !important;
+  right:0 !important;
+  width:190px !important;
+  max-width:calc(100vw - 28px) !important;
+  display:grid !important;
+  gap:6px !important;
+  padding:8px !important;
+  border:1px solid rgba(142,199,255,.28) !important;
+  border-radius:18px !important;
+  background:linear-gradient(180deg,rgba(20,38,57,.98),rgba(9,20,32,.99)) !important;
+  box-shadow:0 18px 46px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+.yfd-object-menu:not([open]) .yfd-object-menu-panel{
+  display:none !important;
+}
+
+.yfd-object-menu-panel button{
+  width:100% !important;
+  min-height:38px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:12px !important;
+  background:rgba(255,255,255,.055) !important;
+  color:rgba(238,246,255,.92) !important;
+  padding:0 12px !important;
+  text-align:left !important;
+  font-size:13px !important;
+  font-weight:850 !important;
+}
+
+.yfd-object-menu-panel button:hover{
+  border-color:rgba(142,199,255,.38) !important;
+  background:rgba(142,199,255,.11) !important;
+}
+
+.yfd-object-menu-panel button[disabled]{
+  opacity:.42 !important;
+  cursor:not-allowed !important;
+}
+
+.yfd-builder-v2-deck-card,
+.yfd-builder-v2-item-card,
+.yfd-builder-deck-card,
+.yfd-sailing-root-item-card{
+  position:relative !important;
+  padding-right:72px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-task-board,
+.yfd-builder-v2-item-card > .yfd-task-board,
+.yfd-builder-deck-card > .yfd-task-board,
+.yfd-sailing-root-item-card > .yfd-task-board{
+  grid-column:1 / -1 !important;
+  justify-self:start !important;
+  margin-top:2px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-object-menu,
+.yfd-builder-v2-item-card > .yfd-object-menu,
+.yfd-builder-deck-card > .yfd-object-menu,
+.yfd-sailing-root-item-card > .yfd-object-menu{
+  position:absolute !important;
+  top:12px !important;
+  right:12px !important;
+}
+
+.yfd-builder-v2-deck-card .yfd-task-board span,
+.yfd-builder-v2-item-card .yfd-task-board span{
+  width:auto !important;
+  max-width:none !important;
+}
+
+.yfd-builder-v2-hull-card{
+  grid-template-columns:1fr !important;
+  place-items:center !important;
+}
+
+.yfd-builder-v2-hull-card > .yfd-task-board{
+  position:relative !important;
+  z-index:2 !important;
+  justify-content:center !important;
+  margin-top:10px !important;
+}
+
+.yfd-builder-v2-hull-card > .yfd-object-menu{
+  position:absolute !important;
+  top:12px !important;
+  right:12px !important;
+}
+
+.yfd-builder-screen-controls{
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.yfd-module-action-row:has(.yfd-context-object-card){
+  grid-template-columns:86px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row .yfd-builder-screen-controls:has(.yfd-context-object-card){
+  width:100% !important;
+  justify-self:stretch !important;
+}
+
+.yfd-context-object-card{
+  width:100% !important;
+  min-width:0 !important;
+  min-height:58px !important;
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+  align-items:center !important;
+  gap:10px !important;
+  padding:8px 10px 8px 14px !important;
+  box-sizing:border-box !important;
+  border:1px solid rgba(142,199,255,.22) !important;
+  border-radius:18px !important;
+  background:rgba(255,255,255,.055) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+.yfd-context-object-copy{
+  min-width:0 !important;
+  display:grid !important;
+  gap:3px !important;
+}
+
+.yfd-context-object-copy strong{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:#f4f8ff !important;
+  font-size:15px !important;
+  font-weight:950 !important;
+}
+
+.yfd-context-object-copy span{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:rgba(210,226,245,.62) !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.06em !important;
+}
+
+.yfd-context-object-card .yfd-task-board{
+  justify-content:flex-end !important;
+}
+
+.yfd-context-object-card .yfd-object-menu{
+  align-self:center !important;
+}
+
+.yfd-task-modal{
+  width:min(620px,100%) !important;
+}
+
+.yfd-task-object-lock{
+  display:grid !important;
+  gap:4px !important;
+  margin:0 0 14px !important;
+  padding:12px 14px !important;
+  border:1px solid rgba(142,199,255,.18) !important;
+  border-radius:16px !important;
+  background:rgba(142,199,255,.07) !important;
+}
+
+.yfd-task-object-lock span{
+  color:rgba(210,226,245,.58) !important;
+  font-size:10px !important;
+  font-weight:900 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.08em !important;
+}
+
+.yfd-task-object-lock strong{
+  color:#f4f8ff !important;
+  font-size:16px !important;
+  line-height:1.15 !important;
+}
+
+.yfd-task-form-grid{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:12px !important;
+}
+
+.yfd-task-modal .yfd-field textarea,
+.yfd-task-modal .yfd-field select{
+  width:100% !important;
+  box-sizing:border-box !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.07) !important;
+  color:#fff !important;
+  padding:13px 14px !important;
+  font:inherit !important;
+}
+
+.yfd-task-modal .yfd-field textarea{
+  resize:vertical !important;
+  min-height:104px !important;
+}
+
+.yfd-task-report-button{
+  width:100% !important;
+  margin-top:4px !important;
+}
+
+.yfd-task-list{
+  display:grid !important;
+  gap:8px !important;
+}
+
+.yfd-task-list-row{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:10px !important;
+  align-items:center !important;
+  padding:12px !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.045) !important;
+}
+
+.yfd-task-list-row strong,
+.yfd-task-list-row span{
+  display:block !important;
+  min-width:0 !important;
+}
+
+.yfd-task-list-row strong{
+  color:#f4f8ff !important;
+  font-size:14px !important;
+  line-height:1.2 !important;
+}
+
+.yfd-task-list-row span{
+  margin-top:4px !important;
+  color:rgba(210,226,245,.64) !important;
+  font-size:12px !important;
+}
+
+.yfd-task-list-row button{
+  min-height:36px !important;
+  border:1px solid rgba(142,199,255,.24) !important;
+  border-radius:12px !important;
+  background:rgba(142,199,255,.08) !important;
+  color:rgba(235,245,255,.92) !important;
+  padding:0 12px !important;
+  font-weight:850 !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row:has(.yfd-context-object-card){
+    grid-template-columns:64px minmax(0,1fr) !important;
+  }
+
+  .yfd-context-object-card{
+    min-height:48px !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:7px !important;
+    padding:7px 8px 7px 10px !important;
+    border-radius:14px !important;
+  }
+
+  .yfd-context-object-card .yfd-task-board{
+    grid-column:1 / -1 !important;
+    justify-content:flex-start !important;
+    order:3 !important;
+  }
+
+  .yfd-context-object-card .yfd-object-menu{
+    grid-column:2 !important;
+    grid-row:1 !important;
+  }
+
+  .yfd-context-object-copy strong{
+    font-size:13px !important;
+  }
+
+  .yfd-context-object-copy span{
+    font-size:9px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:44px !important;
+    min-width:44px !important;
+    height:32px !important;
+    min-height:32px !important;
+    border-radius:12px !important;
+    font-size:11px !important;
+  }
+
+  .yfd-object-menu-panel{
+    width:176px !important;
+  }
+
+  .yfd-task-board{
+    gap:4px !important;
+  }
+
+  .yfd-task-board span{
+    min-width:34px !important;
+    min-height:24px !important;
+    padding:0 7px !important;
+  }
+
+  .yfd-builder-v2-deck-card,
+  .yfd-builder-v2-item-card,
+  .yfd-builder-deck-card,
+  .yfd-sailing-root-item-card{
+    padding-right:64px !important;
+  }
+
+  .yfd-task-form-grid,
+  .yfd-task-list-row{
+    grid-template-columns:1fr !important;
+  }
+}
+
+/* === V40-D3D-4O Builder menu/modal consistency 20260508 === */
+.yfd-action-backdrop,
+.yfd-builder-modal-backdrop{
+  z-index:12000 !important;
+  pointer-events:auto !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions,
+.yfd-module-action-row.yfd-custom-builder-actions:has(.yfd-action-forward){
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+  grid-template-columns:58px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions .yfd-builder-yacht-name-card{
+  grid-column:2 !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions .yfd-action-forward{
+  grid-column:3 !important;
+  justify-self:end !important;
+}
+
+.yfd-builder-v2-deck-card,
+.yfd-builder-v2-item-card,
+.yfd-builder-deck-card,
+.yfd-builder-v2-hull-card,
+.yfd-sailing-root-item-card{
+  position:relative !important;
+  overflow:visible !important;
+  padding-right:74px !important;
+  padding-bottom:56px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-object-menu,
+.yfd-builder-v2-item-card > .yfd-object-menu,
+.yfd-builder-deck-card > .yfd-object-menu,
+.yfd-builder-v2-hull-card > .yfd-object-menu,
+.yfd-sailing-root-item-card > .yfd-object-menu{
+  position:absolute !important;
+  top:14px !important;
+  right:14px !important;
+  margin:0 !important;
+  z-index:24 !important;
+}
+
+.yfd-builder-v2-shared-deck-card > .yfd-object-menu{
+  top:16px !important;
+  right:16px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-task-button,
+.yfd-builder-v2-item-card > .yfd-task-button,
+.yfd-builder-deck-card > .yfd-task-button,
+.yfd-builder-v2-hull-card > .yfd-task-button,
+.yfd-sailing-root-item-card > .yfd-task-button{
+  position:absolute !important;
+  left:16px !important;
+  bottom:14px !important;
+  margin:0 !important;
+  z-index:18 !important;
+}
+
+.yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+  max-width:calc(100% - 96px) !important;
+  text-align:center !important;
+}
+
+.yfd-task-button{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:82px !important;
+  height:30px !important;
+  min-height:30px !important;
+  padding:0 12px !important;
+  gap:6px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(255,183,108,.24),rgba(255,143,66,.14)),
+    rgba(255,255,255,.045) !important;
+  color:rgba(255,238,220,.98) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 9px 22px rgba(0,0,0,.18) !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+.yfd-task-button span,
+.yfd-task-button b{
+  display:inline !important;
+  min-width:0 !important;
+  width:auto !important;
+  height:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  line-height:1 !important;
+}
+
+.yfd-task-button span{
+  color:rgba(255,241,226,.96) !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+}
+
+.yfd-task-button b{
+  color:#fff8f0 !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+
+.yfd-object-menu{
+  line-height:1 !important;
+}
+
+.yfd-object-menu summary{
+  width:46px !important;
+  min-width:46px !important;
+  height:32px !important;
+  min-height:32px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.18),rgba(142,199,255,.08)),
+    rgba(255,255,255,.055) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 9px 22px rgba(0,0,0,.20) !important;
+}
+
+.yfd-object-menu summary span{
+  display:grid !important;
+  place-items:center !important;
+  width:24px !important;
+  height:14px !important;
+  transform:none !important;
+  font-size:0 !important;
+}
+
+.yfd-object-menu summary span::before{
+  content:'...' !important;
+  display:block !important;
+  color:rgba(232,244,255,.90) !important;
+  font-size:19px !important;
+  font-weight:950 !important;
+  line-height:.5 !important;
+  letter-spacing:1.5px !important;
+  transform:translateY(-3px) !important;
+}
+
+.yfd-object-menu-panel{
+  width:184px !important;
+  padding:7px !important;
+  display:grid !important;
+  gap:6px !important;
+  border:1px solid rgba(142,199,255,.28) !important;
+  border-radius:16px !important;
+  background:
+    linear-gradient(180deg,rgba(23,42,60,.98),rgba(15,29,43,.98)),
+    #142233 !important;
+  box-shadow:
+    0 22px 58px rgba(0,0,0,.50),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.yfd-object-menu-panel button{
+  min-height:36px !important;
+  padding:0 12px !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:rgba(255,255,255,.052) !important;
+  color:rgba(240,247,255,.92) !important;
+  font-size:12px !important;
+  font-weight:850 !important;
+  text-align:left !important;
+}
+
+.yfd-object-menu-panel button:hover{
+  background:rgba(142,199,255,.13) !important;
+}
+
+.yfd-builder-create-item-modal .yfd-add-item-segments{
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin:0 0 12px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice{
+  min-height:42px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 12px !important;
+  border-radius:14px !important;
+  text-align:center !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice strong{
+  margin:0 !important;
+  font-size:13px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice.is-selected{
+  border-color:rgba(142,199,255,.72) !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.22),rgba(142,199,255,.10)),
+    rgba(255,255,255,.055) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(142,199,255,.26),
+    0 10px 24px rgba(80,155,224,.14) !important;
+}
+
+.yfd-builder-create-item-modal .yfd-primary-action,
+.yfd-builder-card-text-modal .yfd-primary-action{
+  margin-top:10px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-secondary-action,
+.yfd-builder-card-text-modal .yfd-secondary-action{
+  margin-top:8px !important;
+}
+
+.yfd-ready-delete-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row.yfd-custom-builder-actions,
+  .yfd-module-action-row.yfd-custom-builder-actions:has(.yfd-action-forward){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+    gap:7px !important;
+  }
+
+  .yfd-module-action-row.yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-builder-v2-deck-card,
+  .yfd-builder-v2-item-card,
+  .yfd-builder-deck-card,
+  .yfd-builder-v2-hull-card,
+  .yfd-sailing-root-item-card{
+    padding-right:64px !important;
+    padding-bottom:52px !important;
+  }
+
+  .yfd-builder-v2-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-item-card > .yfd-object-menu,
+  .yfd-builder-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-hull-card > .yfd-object-menu,
+  .yfd-sailing-root-item-card > .yfd-object-menu{
+    top:12px !important;
+    right:12px !important;
+  }
+
+  .yfd-builder-v2-deck-card > .yfd-task-button,
+  .yfd-builder-v2-item-card > .yfd-task-button,
+  .yfd-builder-deck-card > .yfd-task-button,
+  .yfd-builder-v2-hull-card > .yfd-task-button,
+  .yfd-sailing-root-item-card > .yfd-task-button{
+    left:14px !important;
+    bottom:12px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:42px !important;
+    min-width:42px !important;
+    height:30px !important;
+    min-height:30px !important;
+  }
+
+  .yfd-object-menu-panel{
+    width:176px !important;
+  }
+
+  .yfd-builder-create-item-modal .yfd-add-item-segments{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  .yfd-ready-delete-actions{
+    grid-template-columns:1fr !important;
+  }
+}
+
+/* === V40-D3D-5D Sailing rig diagram layout 20260508 === */
+.yfd-sailing-rig-diagram{
+  display:grid !important;
+  grid-template-columns:minmax(128px,.72fr) minmax(220px,1.45fr) minmax(128px,.72fr) !important;
+  gap:12px !important;
+  align-items:stretch !important;
+  margin:0 0 14px !important;
+  min-width:0 !important;
+}
+
+.yfd-sailing-rig-side,
+.yfd-sailing-rig-center,
+.yfd-sailing-rig-extra{
+  display:grid !important;
+  gap:12px !important;
+  min-width:0 !important;
+}
+
+.yfd-sailing-rig-side{
+  grid-template-rows:1fr !important;
+}
+
+.yfd-sailing-rig-center{
+  grid-template-rows:repeat(3, minmax(64px, 1fr)) !important;
+}
+
+.yfd-sailing-rig-card{
+  position:relative !important;
+  width:100% !important;
+  min-width:0 !important;
+  min-height:64px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:10px 12px !important;
+  border:1px solid rgba(142,199,255,.38) !important;
+  border-radius:8px !important;
+  background:
+    linear-gradient(180deg,rgba(52,93,132,.78),rgba(20,41,61,.92)),
+    rgba(255,255,255,.05) !important;
+  color:rgba(248,252,255,.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.12),
+    0 14px 34px rgba(0,0,0,.20) !important;
+  text-align:center !important;
+  cursor:pointer !important;
+}
+
+.yfd-sailing-rig-card:hover{
+  border-color:rgba(142,199,255,.62) !important;
+  background:
+    linear-gradient(180deg,rgba(62,112,157,.86),rgba(22,48,72,.96)),
+    rgba(255,255,255,.065) !important;
+}
+
+.yfd-sailing-rig-card:focus-visible{
+  outline:2px solid rgba(142,199,255,.72) !important;
+  outline-offset:2px !important;
+}
+
+.yfd-sailing-rig-card span{
+  display:block !important;
+  max-width:100% !important;
+  color:inherit !important;
+  font-size:19px !important;
+  font-weight:950 !important;
+  line-height:1.16 !important;
+  letter-spacing:0 !important;
+  text-transform:uppercase !important;
+  overflow-wrap:anywhere !important;
+}
+
+.yfd-sailing-rig-side .yfd-sailing-rig-card{
+  min-height:216px !important;
+}
+
+.yfd-sailing-rig-side .yfd-sailing-rig-card span{
+  font-size:18px !important;
+}
+
+.yfd-sailing-rig-card-top{
+  background:
+    linear-gradient(180deg,rgba(75,122,159,.90),rgba(27,54,78,.96)),
+    rgba(255,255,255,.06) !important;
+}
+
+.yfd-sailing-rig-extra{
+  margin:0 0 14px !important;
+  grid-template-columns:repeat(auto-fit,minmax(160px,1fr)) !important;
+}
+
+.yfd-sailing-rig-extra .yfd-sailing-rig-card{
+  min-height:58px !important;
+}
+
+@media(max-width:720px){
+  .yfd-sailing-rig-diagram{
+    grid-template-columns:minmax(82px,.75fr) minmax(142px,1.35fr) minmax(88px,.8fr) !important;
+    gap:7px !important;
+    margin-bottom:12px !important;
+  }
+
+  .yfd-sailing-rig-side,
+  .yfd-sailing-rig-center{
+    gap:7px !important;
+  }
+
+  .yfd-sailing-rig-center{
+    grid-template-rows:repeat(3, minmax(54px, 1fr)) !important;
+  }
+
+  .yfd-sailing-rig-card{
+    min-height:54px !important;
+    padding:8px 7px !important;
+  }
+
+  .yfd-sailing-rig-card span{
+    font-size:14px !important;
+    line-height:1.14 !important;
+  }
+
+  .yfd-sailing-rig-side .yfd-sailing-rig-card{
+    min-height:176px !important;
+  }
+
+  .yfd-sailing-rig-side .yfd-sailing-rig-card span{
+    font-size:13px !important;
+  }
+}
+
+@media(max-width:390px){
+  .yfd-sailing-rig-diagram{
+    grid-template-columns:minmax(76px,.72fr) minmax(128px,1.28fr) minmax(80px,.76fr) !important;
+    gap:6px !important;
+  }
+
+  .yfd-sailing-rig-card span{
+    font-size:12px !important;
+  }
+
+  .yfd-sailing-rig-side .yfd-sailing-rig-card span{
+    font-size:11px !important;
+  }
+}
+
+/* === V40-D3D-5E Mobile hull marker title fit 20260508 === */
+.yfd-builder-v2-hull-card-title,
+.yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card-title,
+.yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card-title{
+  word-break:normal !important;
+  overflow-wrap:normal !important;
+  hyphens:none !important;
+}
+
+@media(max-width:520px){
+  .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+    width:100% !important;
+    max-width:none !important;
+    padding:0 54px 0 14px !important;
+    white-space:normal !important;
+    word-break:normal !important;
+    overflow-wrap:normal !important;
+    text-wrap:balance !important;
+  }
+
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+    font-size:18px !important;
+    line-height:1.08 !important;
+  }
+}
+
+@media(max-width:380px){
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+    padding:0 48px 0 10px !important;
+    font-size:17px !important;
+  }
+}
 *{box-sizing:border-box}
 html,body{min-height:100%;}
 body{
@@ -8081,13 +8982,324 @@ body #overview.yfd-overview.yfd-admin-base-overview > *{
   line-height:1.35 !important;
 }
 
+.yfd-admin-base-template-list{
+  display:grid !important;
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  gap:10px !important;
+  min-width:0 !important;
+}
+
+.yfd-admin-base-template-meta{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  gap:6px !important;
+  margin-top:10px !important;
+}
+
+.yfd-admin-base-template-meta b{
+  min-height:26px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  border:1px solid rgba(255,255,255,.11) !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.055) !important;
+  padding:0 9px !important;
+  color:rgba(235,245,255,.78) !important;
+  font-size:10.5px !important;
+  font-weight:850 !important;
+}
+
 @media(max-width:520px){
+  .yfd-admin-base-template-list{
+    grid-template-columns:1fr !important;
+  }
+
   .yfd-admin-base-tabs{
     grid-template-columns:1fr !important;
   }
 
   .yfd-admin-base-tabs button{
     min-height:40px !important;
+  }
+}
+
+/* === V40-D3D-5A Admin base editable sailing groups 20260508 === */
+.yfd-admin-base-group-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:7px !important;
+  flex-wrap:wrap !important;
+}
+
+.yfd-admin-base-add-btn,
+.yfd-admin-base-edit-item,
+.yfd-admin-base-delete-item{
+  appearance:none !important;
+  border:1px solid rgba(142,199,255,.28) !important;
+  border-radius:12px !important;
+  background:rgba(142,199,255,.10) !important;
+  color:rgba(244,248,255,.92) !important;
+  font-size:10.5px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  min-height:30px !important;
+  padding:0 10px !important;
+  cursor:pointer !important;
+  touch-action:manipulation !important;
+}
+
+.yfd-admin-base-add-btn{
+  border-color:rgba(63,202,124,.32) !important;
+  background:rgba(63,202,124,.13) !important;
+}
+
+.yfd-admin-base-delete-item{
+  border-color:rgba(255,121,121,.28) !important;
+  background:rgba(255,121,121,.10) !important;
+}
+
+.yfd-admin-base-item{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  align-items:center !important;
+  gap:8px !important;
+}
+
+.yfd-admin-base-item-text{
+  min-width:0 !important;
+}
+
+.yfd-admin-base-item-actions{
+  display:flex !important;
+  align-items:center !important;
+  gap:5px !important;
+}
+
+.yfd-admin-sailing-specific .yfd-admin-base-rig-block{
+  padding:12px !important;
+  border-radius:22px !important;
+  border:1px solid rgba(142,199,255,.13) !important;
+  background:rgba(255,255,255,.025) !important;
+}
+
+@media(max-width:620px){
+  .yfd-admin-base-item{
+    grid-template-columns:1fr !important;
+    align-items:stretch !important;
+  }
+
+  .yfd-admin-base-item-actions{
+    justify-content:stretch !important;
+  }
+
+  .yfd-admin-base-edit-item,
+  .yfd-admin-base-delete-item{
+    flex:1 1 0 !important;
+  }
+}
+
+/* === V40-D3D-5C Bidirectional Structure Templates sync 20260508 === */
+.yfd-structure-template-live{
+  display:grid !important;
+  gap:12px !important;
+  min-width:0 !important;
+}
+
+.yfd-structure-template-summary{
+  display:grid !important;
+  grid-template-columns:minmax(0,1fr) auto !important;
+  gap:12px !important;
+  align-items:start !important;
+  padding:13px 14px !important;
+  border-radius:19px !important;
+  border:1px solid rgba(142,199,255,.22) !important;
+  background:rgba(142,199,255,.06) !important;
+}
+
+.yfd-structure-template-summary span{
+  display:block !important;
+  margin:0 0 5px !important;
+  color:rgba(142,199,255,.72) !important;
+  font-size:11px !important;
+  font-weight:900 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.08em !important;
+}
+
+.yfd-structure-template-summary strong{
+  display:block !important;
+  color:#fff !important;
+  font-size:18px !important;
+  line-height:1.12 !important;
+}
+
+.yfd-structure-template-summary p{
+  margin:7px 0 0 !important;
+  color:rgba(235,239,246,.60) !important;
+  font-size:12px !important;
+  line-height:1.35 !important;
+}
+
+.yfd-structure-template-stats{
+  display:flex !important;
+  flex-wrap:wrap !important;
+  justify-content:flex-end !important;
+  gap:6px !important;
+}
+
+.yfd-structure-template-stats span{
+  margin:0 !important;
+  min-height:28px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:999px !important;
+  background:rgba(255,255,255,.055) !important;
+  padding:0 9px !important;
+  color:rgba(235,245,255,.82) !important;
+  font-size:10.5px !important;
+}
+
+.yfd-structure-template-table{
+  display:grid !important;
+  gap:6px !important;
+  min-width:0 !important;
+}
+
+.yfd-structure-template-row{
+  display:grid !important;
+  grid-template-columns:74px 48px minmax(180px,1.4fr) minmax(110px,.8fr) minmax(150px,1fr) minmax(150px,1fr) 128px !important;
+  gap:8px !important;
+  align-items:center !important;
+  min-width:0 !important;
+  padding:8px 9px !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  border-radius:14px !important;
+  background:rgba(255,255,255,.038) !important;
+}
+
+.yfd-structure-template-row-head{
+  position:sticky !important;
+  top:0 !important;
+  z-index:2 !important;
+  background:rgba(18,35,53,.98) !important;
+  border-color:rgba(142,199,255,.18) !important;
+}
+
+.yfd-structure-template-row span{
+  min-width:0 !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+  color:rgba(235,245,255,.72) !important;
+  font-size:11px !important;
+  font-weight:750 !important;
+}
+
+.yfd-structure-template-row-head span{
+  color:rgba(142,199,255,.82) !important;
+  font-size:10px !important;
+  font-weight:950 !important;
+  text-transform:uppercase !important;
+  letter-spacing:.06em !important;
+}
+
+.yfd-template-title{
+  padding-left:calc((var(--template-level, 1) - 1) * 14px) !important;
+  color:rgba(255,255,255,.93) !important;
+  font-size:12.5px !important;
+  font-weight:900 !important;
+}
+
+.yfd-template-order{
+  color:rgba(238,210,174,.82) !important;
+}
+
+.yfd-template-actions{
+  display:flex !important;
+  align-items:center !important;
+  justify-content:flex-end !important;
+  gap:6px !important;
+  overflow:visible !important;
+}
+
+.yfd-template-add-child,
+.yfd-template-delete-child{
+  width:100% !important;
+  max-width:58px !important;
+  min-height:30px !important;
+  border-radius:12px !important;
+  font-size:10.5px !important;
+  font-weight:900 !important;
+  cursor:pointer !important;
+}
+
+.yfd-template-add-child{
+  border:1px solid rgba(63,202,124,.32) !important;
+  background:rgba(63,202,124,.13) !important;
+  color:rgba(232,255,241,.92) !important;
+}
+
+.yfd-template-delete-child{
+  border:1px solid rgba(255,119,119,.28) !important;
+  background:rgba(255,119,119,.105) !important;
+  color:rgba(255,220,220,.94) !important;
+}
+
+.yfd-structure-template-add-modal textarea{
+  width:100% !important;
+  box-sizing:border-box !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:16px !important;
+  background:rgba(255,255,255,.07) !important;
+  color:#fff !important;
+  padding:13px 14px !important;
+  font:inherit !important;
+  resize:vertical !important;
+}
+
+@media(max-width:860px){
+  .yfd-structure-template-summary{
+    grid-template-columns:1fr !important;
+  }
+
+  .yfd-structure-template-stats{
+    justify-content:flex-start !important;
+  }
+
+  .yfd-structure-template-row{
+    grid-template-columns:58px 38px minmax(160px,1.4fr) minmax(92px,.8fr) 104px !important;
+  }
+
+  .yfd-structure-template-row span:nth-child(5),
+  .yfd-structure-template-row span:nth-child(6){
+    display:none !important;
+  }
+}
+
+@media(max-width:520px){
+  .yfd-structure-template-row{
+    grid-template-columns:54px minmax(0,1fr) 90px !important;
+  }
+
+  .yfd-template-actions{
+    gap:4px !important;
+  }
+
+  .yfd-template-add-child,
+  .yfd-template-delete-child{
+    max-width:43px !important;
+    min-height:28px !important;
+    padding:0 5px !important;
+    font-size:9.5px !important;
+  }
+
+  .yfd-structure-template-row span:nth-child(2),
+  .yfd-structure-template-row span:nth-child(4),
+  .yfd-structure-template-row span:nth-child(5),
+  .yfd-structure-template-row span:nth-child(6){
+    display:none !important;
   }
 }
 
@@ -9069,5 +10281,1310 @@ body #overview.yfd-overview.yfd-admin-base-overview > *{
     font-size:18px !important;
     line-height:1.04 !important;
     padding:0 22px !important;
+  }
+}
+
+
+/* === V40-D3D-4I Builder yacht prefix and parked camera 20260508 === */
+.yfd-module-action-row{
+  grid-template-columns:86px 1fr 58px !important;
+}
+
+.yfd-equipment-action-row{
+  grid-template-columns:1fr 58px !important;
+}
+
+.yfd-custom-builder-actions{
+  grid-template-columns:86px minmax(0,1fr) 58px !important;
+}
+
+.yfd-sailing-builder-actions{
+  grid-template-columns:86px minmax(0,1fr) 58px !important;
+}
+
+.yfd-builder-yacht-name-card{
+  gap:0 !important;
+}
+
+.yfd-builder-yacht-name-card strong{
+  font-size:16px !important;
+}
+
+.yfd-quick-shot{
+  display:none !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row{
+    grid-template-columns:72px 1fr 50px !important;
+  }
+
+  .yfd-equipment-action-row{
+    grid-template-columns:1fr 50px !important;
+  }
+
+  .yfd-custom-builder-actions{
+    grid-template-columns:64px minmax(0,1fr) 44px !important;
+  }
+
+  .yfd-sailing-builder-actions{
+    grid-template-columns:64px minmax(0,1fr) 44px !important;
+  }
+
+  .yfd-module-action-row:has(.yfd-builder-screen-controls),
+  .yfd-module-action-row:has(.yfd-builder-action-spacer){
+    grid-template-columns:64px minmax(0,1fr) 40px !important;
+  }
+
+  .yfd-custom-builder-actions .yfd-gallery-shot{
+    width:44px !important;
+    height:48px !important;
+    min-height:48px !important;
+  }
+
+  .yfd-module-action-row:has(.yfd-builder-screen-controls) .yfd-gallery-shot,
+  .yfd-module-action-row:has(.yfd-builder-action-spacer) .yfd-gallery-shot{
+    width:40px !important;
+    height:44px !important;
+    min-height:44px !important;
+  }
+
+  .yfd-builder-yacht-name-card strong{
+    font-size:14px !important;
+  }
+}
+
+/* === V40-D3D-4J Cascade lock for task menus 20260508 === */
+.yfd-module-action-row:has(.yfd-context-object-card){
+  grid-template-columns:86px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row:has(.yfd-context-object-card) .yfd-builder-screen-controls{
+  width:100% !important;
+  justify-self:stretch !important;
+}
+
+.yfd-module-action-row:has(.yfd-context-object-card) .yfd-context-object-card{
+  width:100% !important;
+}
+
+.yfd-builder-v2-deck-card .yfd-task-board span,
+.yfd-builder-v2-item-card .yfd-task-board span,
+.yfd-builder-v2-hull-card .yfd-task-board span{
+  width:auto !important;
+  max-width:none !important;
+  margin:0 !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row:has(.yfd-context-object-card),
+  .yfd-module-action-row:has(.yfd-builder-screen-controls):has(.yfd-context-object-card){
+    grid-template-columns:64px minmax(0,1fr) !important;
+  }
+}
+
+/* === V40-D3D-4K Tasks button, forward nav, hidden gallery 20260508 === */
+.yfd-gallery-shot{
+  display:none !important;
+}
+
+.yfd-action-forward{
+  height:54px !important;
+  min-height:54px !important;
+  border:1px solid rgba(142,199,255,.24) !important;
+  border-radius:18px !important;
+  background:rgba(142,199,255,.08) !important;
+  color:rgba(238,246,255,.9) !important;
+  font-weight:850 !important;
+  cursor:pointer !important;
+}
+
+.yfd-module-action-row,
+.yfd-custom-builder-actions,
+.yfd-module-action-row:has(.yfd-context-object-card){
+  grid-template-columns:86px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row:has(.yfd-action-forward),
+.yfd-custom-builder-actions:has(.yfd-action-forward),
+.yfd-module-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+  grid-template-columns:86px 86px minmax(0,1fr) !important;
+}
+
+.yfd-task-button{
+  min-width:82px !important;
+  min-height:30px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  gap:7px !important;
+  padding:0 11px !important;
+  border:1px solid rgba(142,199,255,.30) !important;
+  border-radius:999px !important;
+  background:rgba(142,199,255,.10) !important;
+  color:rgba(236,246,255,.94) !important;
+  font:inherit !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+  letter-spacing:0 !important;
+  cursor:pointer !important;
+  pointer-events:auto !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07) !important;
+  white-space:nowrap !important;
+}
+
+.yfd-task-button:hover{
+  border-color:rgba(142,199,255,.48) !important;
+  background:rgba(142,199,255,.16) !important;
+}
+
+.yfd-task-button b{
+  min-width:18px !important;
+  height:18px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  border-radius:999px !important;
+  background:rgba(255,92,92,.16) !important;
+  color:rgba(255,222,222,.98) !important;
+  font-size:11px !important;
+  font-weight:950 !important;
+  line-height:1 !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-task-button,
+.yfd-builder-v2-item-card > .yfd-task-button,
+.yfd-builder-deck-card > .yfd-task-button,
+.yfd-sailing-root-item-card > .yfd-task-button{
+  grid-column:1 / -1 !important;
+  justify-self:start !important;
+  margin-top:8px !important;
+}
+
+.yfd-builder-v2-hull-card > .yfd-task-button{
+  position:relative !important;
+  z-index:2 !important;
+  justify-self:center !important;
+  margin-top:10px !important;
+}
+
+.yfd-context-object-card .yfd-task-button{
+  justify-self:end !important;
+}
+
+.yfd-context-object-card{
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+}
+
+.yfd-object-menu[open]{
+  z-index:10000 !important;
+}
+
+.yfd-object-menu[open]::before{
+  content:'' !important;
+  position:fixed !important;
+  inset:0 !important;
+  z-index:0 !important;
+  display:block !important;
+  background:rgba(0,0,0,0) !important;
+  pointer-events:auto !important;
+}
+
+.yfd-object-menu-panel{
+  z-index:2 !important;
+  pointer-events:auto !important;
+}
+
+.yfd-builder-v2-deck-card:has(> .yfd-object-menu[open]),
+.yfd-builder-v2-item-card:has(> .yfd-object-menu[open]),
+.yfd-builder-deck-card:has(> .yfd-object-menu[open]),
+.yfd-sailing-root-item-card:has(> .yfd-object-menu[open]),
+.yfd-context-object-card:has(.yfd-object-menu[open]){
+  z-index:9990 !important;
+  overflow:visible !important;
+}
+
+.yfd-builder-v2-shared,
+.yfd-builder-v2-card-grid,
+.yfd-builder-v2-hull-section,
+.yfd-builder-shared,
+.yfd-list,
+.yfd-builder-page-list{
+  overflow:visible !important;
+}
+
+@media(max-width:430px){
+  .yfd-action-forward{
+    height:50px !important;
+    min-height:50px !important;
+    border-radius:16px !important;
+    font-size:0 !important;
+  }
+
+  .yfd-action-forward::after{
+    content:'>';
+    font-size:20px !important;
+    line-height:1 !important;
+  }
+
+  .yfd-module-action-row,
+  .yfd-custom-builder-actions,
+  .yfd-module-action-row:has(.yfd-context-object-card){
+    grid-template-columns:64px minmax(0,1fr) !important;
+  }
+
+  .yfd-module-action-row:has(.yfd-action-forward),
+  .yfd-custom-builder-actions:has(.yfd-action-forward),
+  .yfd-module-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+    grid-template-columns:64px 52px minmax(0,1fr) !important;
+  }
+
+  .yfd-task-button{
+    min-width:74px !important;
+    min-height:28px !important;
+    padding:0 9px !important;
+    gap:6px !important;
+    font-size:11px !important;
+  }
+
+  .yfd-context-object-card .yfd-task-button{
+    grid-column:auto !important;
+    grid-row:auto !important;
+    order:0 !important;
+  }
+
+  .yfd-context-object-card{
+    grid-template-columns:minmax(0,1fr) auto auto !important;
+  }
+}
+
+/* === V40-D3D-4M Builder root deck order and mobile task-menu polish 20260508 === */
+.yfd-custom-builder-actions{
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+  align-items:stretch !important;
+}
+
+.yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+  grid-template-columns:58px minmax(0,1fr) !important;
+}
+
+.yfd-custom-builder-actions .yfd-builder-yacht-name-card{
+  grid-column:2 !important;
+  min-height:58px !important;
+}
+
+.yfd-custom-builder-actions .yfd-action-forward{
+  grid-column:3 !important;
+  justify-self:end !important;
+}
+
+.yfd-nav-arrow,
+.yfd-custom-builder-actions .yfd-action-back,
+.yfd-action-forward{
+  width:58px !important;
+  min-width:58px !important;
+  height:58px !important;
+  min-height:58px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border-radius:20px !important;
+  border:1px solid rgba(142,199,255,.26) !important;
+  background:
+    radial-gradient(circle at 35% 20%,rgba(142,199,255,.16),transparent 44%),
+    rgba(255,255,255,.055) !important;
+  color:rgba(238,246,255,.94) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 12px 28px rgba(0,0,0,.18) !important;
+  font-size:31px !important;
+  font-weight:800 !important;
+  line-height:1 !important;
+}
+
+.yfd-nav-arrow span,
+.yfd-action-forward span{
+  display:block !important;
+  line-height:1 !important;
+  transform:translateY(-1px) !important;
+}
+
+.yfd-custom-builder-actions .yfd-action-back::after,
+.yfd-action-forward::after{
+  content:none !important;
+  display:none !important;
+}
+
+.yfd-builder-v2-upper .yfd-builder-v2-shared-grid{
+  grid-template-columns:1fr !important;
+}
+
+.yfd-builder-v2-hulls-1 .yfd-builder-v2-card-grid{
+  grid-template-columns:1fr !important;
+}
+
+.yfd-builder-v2-hulls-1 .yfd-builder-v2-add-deck{
+  width:100% !important;
+}
+
+.yfd-builder-v2-hull-card::after{
+  content:'' !important;
+  display:none !important;
+}
+
+.yfd-task-button{
+  min-width:88px !important;
+  min-height:32px !important;
+  padding:0 12px !important;
+  gap:8px !important;
+  border:1px solid rgba(255,171,92,.34) !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(255,178,98,.18),rgba(255,145,58,.10)),
+    rgba(255,255,255,.035) !important;
+  color:rgba(255,231,204,.96) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 8px 22px rgba(255,142,54,.10) !important;
+}
+
+.yfd-task-button:hover{
+  border-color:rgba(255,187,116,.50) !important;
+  background:
+    linear-gradient(180deg,rgba(255,190,112,.23),rgba(255,145,58,.13)),
+    rgba(255,255,255,.045) !important;
+}
+
+.yfd-task-button span{
+  color:rgba(255,238,216,.96) !important;
+  font-size:11.5px !important;
+  font-weight:950 !important;
+}
+
+.yfd-task-button b{
+  min-width:20px !important;
+  height:20px !important;
+  border:1px solid rgba(255,220,180,.20) !important;
+  background:rgba(255,112,72,.24) !important;
+  color:rgba(255,236,226,.98) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10) !important;
+}
+
+.yfd-object-menu summary{
+  width:48px !important;
+  min-width:48px !important;
+  height:34px !important;
+  min-height:34px !important;
+  border-radius:999px !important;
+  border-color:rgba(142,199,255,.30) !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.13),rgba(255,255,255,.055)),
+    rgba(255,255,255,.04) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 8px 20px rgba(0,0,0,.18) !important;
+}
+
+.yfd-object-menu summary span{
+  transform:none !important;
+  font-size:0 !important;
+  width:24px !important;
+  height:14px !important;
+  display:grid !important;
+  place-items:center !important;
+}
+
+.yfd-object-menu summary span::before{
+  content:'...' !important;
+  display:block !important;
+  color:rgba(232,244,255,.88) !important;
+  font-size:19px !important;
+  font-weight:950 !important;
+  line-height:.5 !important;
+  letter-spacing:1.5px !important;
+  transform:translateY(-4px) !important;
+}
+
+.yfd-object-menu[open] summary{
+  border-color:rgba(255,184,112,.42) !important;
+  background:
+    linear-gradient(180deg,rgba(255,177,92,.17),rgba(255,255,255,.06)),
+    rgba(255,255,255,.045) !important;
+}
+
+.yfd-object-menu-panel{
+  border-color:rgba(142,199,255,.30) !important;
+  border-radius:16px !important;
+  box-shadow:
+    0 20px 54px rgba(0,0,0,.48),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.yfd-object-menu-panel button{
+  border-radius:11px !important;
+  background:rgba(255,255,255,.052) !important;
+}
+
+.yfd-card-task-menu-only > .yfd-object-menu{
+  display:block !important;
+}
+
+@media(max-width:430px){
+  .yfd-custom-builder-actions,
+  .yfd-custom-builder-actions:has(.yfd-action-forward){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+    gap:7px !important;
+  }
+
+  .yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-nav-arrow,
+  .yfd-custom-builder-actions .yfd-action-back,
+  .yfd-action-forward{
+    width:48px !important;
+    min-width:48px !important;
+    height:48px !important;
+    min-height:48px !important;
+    border-radius:16px !important;
+    font-size:27px !important;
+  }
+
+  .yfd-builder-yacht-name-card strong{
+    font-size:13px !important;
+  }
+
+  .yfd-task-button{
+    min-width:82px !important;
+    min-height:30px !important;
+    padding:0 10px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:44px !important;
+    min-width:44px !important;
+    height:32px !important;
+    min-height:32px !important;
+  }
+}
+
+/* === V40-D3D-4N Builder top bar, task pill and choice modal stabilization 20260508 === */
+.yfd-builder-action-row{
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row,
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card){
+  grid-template-columns:58px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward),
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+}
+
+.yfd-builder-action-row:not(:has(.yfd-action-forward)){
+  grid-template-columns:58px minmax(0,1fr) !important;
+}
+
+.yfd-builder-action-row .yfd-builder-screen-controls{
+  grid-column:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+  align-self:stretch !important;
+}
+
+.yfd-builder-action-row > .yfd-context-object-card{
+  grid-column:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.yfd-builder-action-row .yfd-action-forward{
+  grid-column:3 !important;
+  justify-self:end !important;
+}
+
+.yfd-builder-action-row .yfd-context-object-card{
+  min-height:58px !important;
+  grid-template-columns:minmax(0,1fr) auto auto !important;
+  gap:10px !important;
+}
+
+.yfd-builder-action-row .yfd-context-object-copy strong,
+.yfd-builder-yacht-name-card strong{
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+  white-space:nowrap !important;
+}
+
+.yfd-task-button{
+  min-width:78px !important;
+  min-height:31px !important;
+  gap:6px !important;
+  padding:0 12px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(255,178,104,.24),rgba(255,145,63,.13)),
+    rgba(255,255,255,.045) !important;
+  color:rgba(255,238,220,.98) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 8px 22px rgba(0,0,0,.16) !important;
+}
+
+.yfd-task-button:hover{
+  border:0 !important;
+  background:
+    linear-gradient(180deg,rgba(255,190,120,.28),rgba(255,145,63,.16)),
+    rgba(255,255,255,.055) !important;
+}
+
+.yfd-task-button span{
+  display:inline !important;
+  min-width:0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  color:rgba(255,241,226,.96) !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+  line-height:1 !important;
+}
+
+.yfd-task-button b{
+  min-width:0 !important;
+  width:auto !important;
+  height:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#fff8f0 !important;
+  box-shadow:none !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+  line-height:1 !important;
+}
+
+.yfd-object-menu summary{
+  width:46px !important;
+  min-width:46px !important;
+  height:32px !important;
+  min-height:32px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.18),rgba(142,199,255,.08)),
+    rgba(255,255,255,.045) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 8px 20px rgba(0,0,0,.18) !important;
+}
+
+.yfd-object-menu summary span::before{
+  transform:translateY(-3px) !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-object-menu,
+.yfd-builder-v2-item-card > .yfd-object-menu,
+.yfd-builder-deck-card > .yfd-object-menu,
+.yfd-sailing-root-item-card > .yfd-object-menu{
+  top:14px !important;
+  right:14px !important;
+}
+
+.yfd-builder-v2-shared-deck-card > .yfd-object-menu{
+  top:18px !important;
+  right:16px !important;
+}
+
+.yfd-builder-kind-modal .yfd-add-item-segments{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:10px !important;
+  margin:14px 0 0 !important;
+}
+
+.yfd-builder-kind-modal .yfd-add-item-segments > button,
+.yfd-builder-kind-modal .yfd-add-item-segments .yfd-choice{
+  width:100% !important;
+  min-height:66px !important;
+  display:grid !important;
+  gap:5px !important;
+  align-content:center !important;
+  justify-items:start !important;
+  padding:12px 14px !important;
+  border:1px solid rgba(142,199,255,.20) !important;
+  border-radius:16px !important;
+  background:
+    linear-gradient(135deg,rgba(142,199,255,.10),rgba(255,255,255,.045)),
+    rgba(255,255,255,.035) !important;
+  color:rgba(238,246,255,.90) !important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07) !important;
+  text-align:left !important;
+  font:inherit !important;
+  cursor:pointer !important;
+}
+
+.yfd-builder-kind-modal .yfd-add-item-segments > button strong,
+.yfd-builder-kind-modal .yfd-add-item-segments .yfd-choice strong{
+  display:block !important;
+  color:#f6fbff !important;
+  font-size:14px !important;
+  font-weight:950 !important;
+  line-height:1.12 !important;
+}
+
+.yfd-builder-kind-modal .yfd-add-item-segments > button span,
+.yfd-builder-kind-modal .yfd-add-item-segments .yfd-choice span{
+  display:block !important;
+  color:rgba(213,230,248,.64) !important;
+  font-size:12px !important;
+  font-weight:700 !important;
+  line-height:1.25 !important;
+}
+
+.yfd-builder-kind-modal .yfd-add-item-segments > button:hover,
+.yfd-builder-kind-modal .yfd-add-item-segments .yfd-choice:hover{
+  border-color:rgba(142,199,255,.34) !important;
+  background:
+    linear-gradient(135deg,rgba(142,199,255,.15),rgba(255,255,255,.055)),
+    rgba(255,255,255,.04) !important;
+}
+
+@media(max-width:430px){
+  .yfd-builder-action-row,
+  .yfd-builder-action-row:has(.yfd-action-forward){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+    gap:7px !important;
+  }
+
+  .yfd-module-action-row.yfd-builder-action-row,
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward),
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+  }
+
+  .yfd-builder-action-row:not(:has(.yfd-action-forward)){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-builder-action-row .yfd-context-object-card{
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:6px 8px !important;
+    min-height:64px !important;
+    padding:8px 8px 8px 10px !important;
+  }
+
+  .yfd-builder-action-row .yfd-context-object-copy{
+    grid-column:1 !important;
+    grid-row:1 !important;
+  }
+
+  .yfd-builder-action-row .yfd-context-object-card .yfd-object-menu{
+    grid-column:2 !important;
+    grid-row:1 !important;
+    justify-self:end !important;
+    align-self:center !important;
+  }
+
+  .yfd-builder-action-row .yfd-context-object-card .yfd-task-button{
+    grid-column:1 / -1 !important;
+    grid-row:2 !important;
+    justify-self:start !important;
+    margin-top:2px !important;
+  }
+
+  .yfd-task-button{
+    min-width:72px !important;
+    min-height:29px !important;
+    padding:0 10px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:42px !important;
+    min-width:42px !important;
+    height:30px !important;
+    min-height:30px !important;
+  }
+}
+
+/* === V40-D3D-4O FINAL Builder menu/modal overrides 20260508 === */
+.yfd-action-backdrop,
+.yfd-builder-modal-backdrop{
+  z-index:12000 !important;
+  pointer-events:auto !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions,
+.yfd-module-action-row.yfd-custom-builder-actions:has(.yfd-action-forward){
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+  grid-template-columns:58px minmax(0,1fr) !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions .yfd-builder-yacht-name-card{
+  grid-column:2 !important;
+  min-width:0 !important;
+  width:100% !important;
+}
+
+.yfd-module-action-row.yfd-custom-builder-actions .yfd-action-forward{
+  grid-column:3 !important;
+  justify-self:end !important;
+}
+
+.yfd-builder-v2-deck-card,
+.yfd-builder-v2-item-card,
+.yfd-builder-deck-card,
+.yfd-builder-v2-hull-card,
+.yfd-sailing-root-item-card{
+  position:relative !important;
+  overflow:visible !important;
+  padding-right:74px !important;
+  padding-bottom:56px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-object-menu,
+.yfd-builder-v2-item-card > .yfd-object-menu,
+.yfd-builder-deck-card > .yfd-object-menu,
+.yfd-builder-v2-hull-card > .yfd-object-menu,
+.yfd-sailing-root-item-card > .yfd-object-menu{
+  position:absolute !important;
+  top:14px !important;
+  right:14px !important;
+  margin:0 !important;
+  z-index:24 !important;
+}
+
+.yfd-builder-v2-shared-deck-card > .yfd-object-menu{
+  top:16px !important;
+  right:16px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-task-button,
+.yfd-builder-v2-item-card > .yfd-task-button,
+.yfd-builder-deck-card > .yfd-task-button,
+.yfd-builder-v2-hull-card > .yfd-task-button,
+.yfd-sailing-root-item-card > .yfd-task-button{
+  position:absolute !important;
+  left:16px !important;
+  bottom:14px !important;
+  margin:0 !important;
+  z-index:18 !important;
+}
+
+.yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+  max-width:calc(100% - 96px) !important;
+  text-align:center !important;
+}
+
+.yfd-task-button{
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  min-width:82px !important;
+  height:30px !important;
+  min-height:30px !important;
+  padding:0 12px !important;
+  gap:6px !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(255,183,108,.24),rgba(255,143,66,.14)),
+    rgba(255,255,255,.045) !important;
+  color:rgba(255,238,220,.98) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 9px 22px rgba(0,0,0,.18) !important;
+  line-height:1 !important;
+  white-space:nowrap !important;
+}
+
+.yfd-task-button span,
+.yfd-task-button b{
+  display:inline !important;
+  min-width:0 !important;
+  width:auto !important;
+  height:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  line-height:1 !important;
+}
+
+.yfd-task-button span{
+  color:rgba(255,241,226,.96) !important;
+  font-size:12px !important;
+  font-weight:900 !important;
+}
+
+.yfd-task-button b{
+  color:#fff8f0 !important;
+  font-size:12px !important;
+  font-weight:950 !important;
+}
+
+.yfd-object-menu summary{
+  width:46px !important;
+  min-width:46px !important;
+  height:32px !important;
+  min-height:32px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:999px !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.18),rgba(142,199,255,.08)),
+    rgba(255,255,255,.055) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.13),
+    0 9px 22px rgba(0,0,0,.20) !important;
+}
+
+.yfd-object-menu summary span{
+  display:grid !important;
+  place-items:center !important;
+  width:24px !important;
+  height:14px !important;
+  transform:none !important;
+  font-size:0 !important;
+}
+
+.yfd-object-menu summary span::before{
+  content:'...' !important;
+  display:block !important;
+  color:rgba(232,244,255,.90) !important;
+  font-size:19px !important;
+  font-weight:950 !important;
+  line-height:.5 !important;
+  letter-spacing:1.5px !important;
+  transform:translateY(-3px) !important;
+}
+
+.yfd-object-menu-panel{
+  width:184px !important;
+  padding:7px !important;
+  display:grid !important;
+  gap:6px !important;
+  border:1px solid rgba(142,199,255,.28) !important;
+  border-radius:16px !important;
+  background:
+    linear-gradient(180deg,rgba(23,42,60,.98),rgba(15,29,43,.98)),
+    #142233 !important;
+  box-shadow:
+    0 22px 58px rgba(0,0,0,.50),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.yfd-object-menu-panel button{
+  min-height:36px !important;
+  padding:0 12px !important;
+  border:0 !important;
+  border-radius:11px !important;
+  background:rgba(255,255,255,.052) !important;
+  color:rgba(240,247,255,.92) !important;
+  font-size:12px !important;
+  font-weight:850 !important;
+  text-align:left !important;
+}
+
+.yfd-object-menu-panel button:hover{
+  background:rgba(142,199,255,.13) !important;
+}
+
+.yfd-builder-create-item-modal .yfd-add-item-segments{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  margin:0 0 12px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice{
+  min-height:42px !important;
+  display:flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  padding:0 12px !important;
+  border-radius:14px !important;
+  text-align:center !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice strong{
+  margin:0 !important;
+  font-size:13px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-choice.is-selected{
+  border-color:rgba(142,199,255,.72) !important;
+  background:
+    linear-gradient(180deg,rgba(142,199,255,.22),rgba(142,199,255,.10)),
+    rgba(255,255,255,.055) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(142,199,255,.26),
+    0 10px 24px rgba(80,155,224,.14) !important;
+}
+
+.yfd-builder-create-item-modal .yfd-primary-action,
+.yfd-builder-card-text-modal .yfd-primary-action{
+  margin-top:10px !important;
+}
+
+.yfd-builder-create-item-modal .yfd-secondary-action,
+.yfd-builder-card-text-modal .yfd-secondary-action{
+  margin-top:8px !important;
+}
+
+.yfd-ready-delete-actions{
+  display:grid !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row.yfd-custom-builder-actions,
+  .yfd-module-action-row.yfd-custom-builder-actions:has(.yfd-action-forward){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+    gap:7px !important;
+  }
+
+  .yfd-module-action-row.yfd-custom-builder-actions:not(:has(.yfd-action-forward)){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-builder-v2-deck-card,
+  .yfd-builder-v2-item-card,
+  .yfd-builder-deck-card,
+  .yfd-builder-v2-hull-card,
+  .yfd-sailing-root-item-card{
+    padding-right:64px !important;
+    padding-bottom:52px !important;
+  }
+
+  .yfd-builder-v2-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-item-card > .yfd-object-menu,
+  .yfd-builder-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-hull-card > .yfd-object-menu,
+  .yfd-sailing-root-item-card > .yfd-object-menu{
+    top:12px !important;
+    right:12px !important;
+  }
+
+  .yfd-builder-v2-deck-card > .yfd-task-button,
+  .yfd-builder-v2-item-card > .yfd-task-button,
+  .yfd-builder-deck-card > .yfd-task-button,
+  .yfd-builder-v2-hull-card > .yfd-task-button,
+  .yfd-sailing-root-item-card > .yfd-task-button{
+    left:14px !important;
+    bottom:12px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:42px !important;
+    min-width:42px !important;
+    height:30px !important;
+    min-height:30px !important;
+  }
+
+  .yfd-object-menu-panel{
+    width:176px !important;
+  }
+
+  .yfd-ready-delete-actions{
+    grid-template-columns:1fr !important;
+  }
+}
+/* === V40-D3D-5F FINAL Mobile sailing hull/menu interaction 20260508 === */
+.yfd-object-menu[open]::before{
+  display:none !important;
+  pointer-events:none !important;
+}
+
+@media(max-width:520px){
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+  }
+
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+    flex:1 1 auto !important;
+    width:auto !important;
+    max-width:none !important;
+    min-width:0 !important;
+    padding:0 64px 0 18px !important;
+    text-align:left !important;
+    white-space:nowrap !important;
+    word-break:normal !important;
+    overflow-wrap:normal !important;
+    hyphens:none !important;
+    text-wrap:normal !important;
+  }
+
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-object-menu,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-object-menu{
+    right:12px !important;
+  }
+}
+
+@media(max-width:380px){
+  .yfd-builder-v2-hulls-2 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title,
+  .yfd-builder-v2-hulls-3 .yfd-builder-v2-hull-card > .yfd-builder-v2-hull-card-title{
+    padding-left:14px !important;
+    padding-right:58px !important;
+    font-size:16px !important;
+  }
+}
+
+/* === V40-D3D-5H Object menu layer guard 20260508 === */
+.yfd-builder-v2-hull-section,
+.yfd-builder-v2-card-grid,
+.yfd-builder-v2-shared{
+  position:relative !important;
+}
+
+.yfd-builder-v2-hull-section:has(.yfd-object-menu[open]),
+.yfd-builder-v2-card-grid:has(.yfd-object-menu[open]),
+.yfd-builder-v2-shared:has(.yfd-object-menu[open]){
+  z-index:13000 !important;
+  overflow:visible !important;
+}
+
+.yfd-builder-v2-hull-card:has(> .yfd-object-menu[open]),
+.yfd-builder-v2-shared-deck-card:has(> .yfd-object-menu[open]),
+.yfd-builder-v2-deck-card:has(> .yfd-object-menu[open]),
+.yfd-builder-v2-item-card:has(> .yfd-object-menu[open]),
+.yfd-builder-deck-card:has(> .yfd-object-menu[open]),
+.yfd-sailing-root-item-card:has(> .yfd-object-menu[open]),
+.yfd-context-object-card:has(.yfd-object-menu[open]){
+  position:relative !important;
+  z-index:13010 !important;
+  overflow:visible !important;
+}
+
+.yfd-object-menu[open]{
+  z-index:13020 !important;
+}
+
+.yfd-object-menu[open] .yfd-object-menu-panel{
+  position:absolute !important;
+  z-index:13030 !important;
+  pointer-events:auto !important;
+}
+
+.yfd-builder-v2-hull-section:has(.yfd-object-menu[open]) .yfd-builder-slot,
+.yfd-builder-v2-card-grid:has(.yfd-object-menu[open]) .yfd-builder-slot,
+.yfd-builder-v2-shared:has(.yfd-object-menu[open]) .yfd-builder-slot{
+  z-index:0 !important;
+}
+
+/* === V40-D3D-5K Deep screen and menu polish 20260508 === */
+.yfd-module-action-row.yfd-builder-action-row,
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card){
+  display:grid !important;
+  grid-template-columns:58px minmax(0,1fr) !important;
+  align-items:stretch !important;
+  gap:10px !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward),
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+  grid-template-columns:58px minmax(0,1fr) 58px !important;
+}
+
+.yfd-builder-action-row .yfd-builder-screen-controls{
+  display:block !important;
+  grid-column:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.yfd-builder-action-row > .yfd-context-object-card,
+.yfd-builder-action-row .yfd-builder-screen-controls > .yfd-context-object-card{
+  grid-column:2 !important;
+  width:100% !important;
+  min-width:0 !important;
+}
+
+.yfd-builder-action-row .yfd-action-back,
+.yfd-builder-action-row .yfd-action-forward{
+  width:58px !important;
+  min-width:58px !important;
+  max-width:58px !important;
+  height:58px !important;
+  min-height:58px !important;
+  max-height:58px !important;
+  padding:0 !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-builder-screen-controls) > .yfd-action-back.yfd-nav-arrow,
+.yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card) > .yfd-action-back.yfd-nav-arrow,
+.yfd-module-action-row.yfd-builder-action-row > .yfd-action-forward.yfd-nav-arrow{
+  width:58px !important;
+  min-width:58px !important;
+  max-width:58px !important;
+  height:58px !important;
+  min-height:58px !important;
+  max-height:58px !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row > .yfd-action-back::after,
+.yfd-module-action-row.yfd-builder-action-row > .yfd-action-forward::after{
+  content:none !important;
+  display:none !important;
+}
+
+.yfd-module-action-row.yfd-builder-action-row > .yfd-nav-arrow span{
+  display:block !important;
+  width:auto !important;
+  height:auto !important;
+  font-size:34px !important;
+  line-height:1 !important;
+  transform:translateY(-1px) !important;
+}
+
+.yfd-object-menu summary{
+  width:46px !important;
+  min-width:46px !important;
+  max-width:46px !important;
+  height:32px !important;
+  min-height:32px !important;
+  max-height:32px !important;
+  display:grid !important;
+  place-items:center !important;
+  padding:0 !important;
+  overflow:hidden !important;
+}
+
+.yfd-object-menu summary span{
+  display:block !important;
+  width:24px !important;
+  min-width:24px !important;
+  height:14px !important;
+  line-height:1 !important;
+  font-size:0 !important;
+  transform:none !important;
+}
+
+.yfd-object-menu summary span::before{
+  content:'...' !important;
+  display:block !important;
+  position:relative !important;
+  top:-4px !important;
+  transform:none !important;
+  line-height:1 !important;
+  letter-spacing:1.5px !important;
+}
+
+.yfd-builder-v2-deck-card > .yfd-object-menu,
+.yfd-builder-v2-shared-deck-card > .yfd-object-menu,
+.yfd-builder-v2-item-card > .yfd-object-menu,
+.yfd-builder-deck-card > .yfd-object-menu,
+.yfd-sailing-root-item-card > .yfd-object-menu{
+  top:16px !important;
+  right:16px !important;
+}
+
+.yfd-builder-v2-card-grid:has(.yfd-object-menu[open]) .yfd-builder-slot,
+.yfd-builder-v2-shared-grid:has(.yfd-object-menu[open]) .yfd-builder-slot,
+.yfd-builder-page-list:has(.yfd-object-menu[open]) .yfd-builder-page-add-row,
+.yfd-builder-page-list:has(.yfd-object-menu[open]) .yfd-builder-empty-state button{
+  pointer-events:none !important;
+  z-index:0 !important;
+}
+
+.yfd-builder-v2-upper:has(.yfd-object-menu[open]),
+.yfd-builder-v2-hulls:has(.yfd-object-menu[open]),
+.yfd-builder-page-list:has(.yfd-object-menu[open]),
+.yfd-sailing-root-list:has(.yfd-object-menu[open]){
+  position:relative !important;
+  z-index:13000 !important;
+  overflow:visible !important;
+}
+
+.yfd-object-menu[open] .yfd-object-menu-panel,
+.yfd-object-menu[open] .yfd-object-menu-panel *{
+  pointer-events:auto !important;
+}
+
+@media(max-width:430px){
+  .yfd-module-action-row.yfd-builder-action-row,
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card),
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward),
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-action-forward):has(.yfd-context-object-card){
+    grid-template-columns:48px minmax(0,1fr) 48px !important;
+    gap:7px !important;
+  }
+
+  .yfd-module-action-row.yfd-builder-action-row:not(:has(.yfd-action-forward)){
+    grid-template-columns:48px minmax(0,1fr) !important;
+  }
+
+  .yfd-builder-action-row .yfd-action-back,
+  .yfd-builder-action-row .yfd-action-forward{
+    width:48px !important;
+    min-width:48px !important;
+    max-width:48px !important;
+    height:48px !important;
+    min-height:48px !important;
+    max-height:48px !important;
+  }
+
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-builder-screen-controls) > .yfd-action-back.yfd-nav-arrow,
+  .yfd-module-action-row.yfd-builder-action-row:has(.yfd-context-object-card) > .yfd-action-back.yfd-nav-arrow,
+  .yfd-module-action-row.yfd-builder-action-row > .yfd-action-forward.yfd-nav-arrow{
+    width:48px !important;
+    min-width:48px !important;
+    max-width:48px !important;
+    height:48px !important;
+    min-height:48px !important;
+    max-height:48px !important;
+  }
+
+  .yfd-module-action-row.yfd-builder-action-row > .yfd-nav-arrow span{
+    font-size:30px !important;
+  }
+
+  .yfd-object-menu summary{
+    width:42px !important;
+    min-width:42px !important;
+    max-width:42px !important;
+    height:30px !important;
+    min-height:30px !important;
+    max-height:30px !important;
+  }
+
+  .yfd-object-menu summary span::before{
+    top:-4px !important;
+  }
+
+  .yfd-builder-v2-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-shared-deck-card > .yfd-object-menu,
+  .yfd-builder-v2-item-card > .yfd-object-menu,
+  .yfd-builder-deck-card > .yfd-object-menu,
+  .yfd-sailing-root-item-card > .yfd-object-menu{
+    top:12px !important;
+    right:12px !important;
   }
 }

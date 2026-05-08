@@ -533,84 +533,603 @@ const equipmentStore = {
 
 
 function getSailingOperationalRoots(rig='bermudan_sloop'){
-  let sparItems = [
-    {title:'Main Mast', type:'Spar', note:'Primary mast structure'},
-    {title:'Boom', type:'Spar', note:'Main boom assembly'},
-    {title:'Spreaders', type:'Spar', note:'Mast spreader structure'},
-    {title:'Mast Base', type:'Spar', note:'Compression and mast step area'},
-    {title:'Mast Lights', type:'Electrical', note:'Navigation and deck illumination'}
-  ];
+  const rigId = rig || 'bermudan_sloop';
+  let groups = [];
 
-  let sailItems = [
-    {title:'Main Sail', type:'Sail', note:'Primary propulsion sail'},
-    {title:'Headsail', type:'Sail', note:'Genoa or jib configuration'},
-    {title:'Downwind Sails', type:'Sail', note:'Gennaker, Code Zero or Spinnaker'},
-    {title:'Sail Storage', type:'Storage', note:'Bags, lockers and sail storage'}
-  ];
-
-  if(rig === 'ketch'){
-    sparItems = [
-      {title:'Main Mast', type:'Spar', note:'Primary mast structure'},
-      {title:'Mizzen Mast', type:'Spar', note:'Secondary aft mast'},
-      {title:'Main Boom', type:'Spar', note:'Main boom assembly'},
-      {title:'Mizzen Boom', type:'Spar', note:'Mizzen boom assembly'}
-    ];
-
-    sailItems = [
-      {title:'Main Sail', type:'Sail', note:'Primary propulsion sail'},
-      {title:'Mizzen Sail', type:'Sail', note:'Secondary aft sail'},
-      {title:'Headsail', type:'Sail', note:'Headsail configuration'},
-      {title:'Downwind Sails', type:'Sail', note:'Running and downwind sails'},
-      {title:'Sail Storage', type:'Storage', note:'Sail bags and storage'}
-    ];
+  try{
+    groups = getAdminBaseSailingRigGroups(rigId);
+  } catch(e){
+    const fallback = typeof getDefaultSailingRigGroups === 'function'
+      ? getDefaultSailingRigGroups()
+      : {};
+    groups = fallback[rigId] || fallback.bermudan_sloop || [];
   }
 
-  if(rig === 'schooner'){
-    sparItems = [
-      {title:'Fore Mast', type:'Spar', note:'Forward mast structure'},
-      {title:'Main Mast', type:'Spar', note:'Main aft mast structure'}
-    ];
+  return (groups || []).map((group, index) => ({
+    id:group.id,
+    title:group.title,
+    note:group.note || getSailingRigSectionNote(group),
+    order:index + 1,
+    is_sailing_root:true,
+    rig_type:group.rig_type || rigId,
+    section_key:group.section_key || group.id,
+    database_meaning:group.database_meaning || group.type || 'sailing_rig_section',
+    items:(group.items || []).map(item => ({
+      title:item.title,
+      key:item.key || item.id,
+      type:item.type || group.type || item.category || group.title || 'Equipment',
+      note:item.note || item.category || group.title || 'Sailing rig equipment',
+      category:item.category || group.title,
+      library_ref:'adminbase:' + group.id + ':' + item.id,
+      library_source:'admin_base_sailing'
+    }))
+  }));
+}
 
-    sailItems = [
-      {title:'Fore Sail', type:'Sail', note:'Forward sail plan'},
-      {title:'Main Sail', type:'Sail', note:'Main sail plan'},
-      {title:'Staysail', type:'Sail', note:'Intermediate staysail'},
-      {title:'Downwind Sails', type:'Sail', note:'Running sail inventory'},
-      {title:'Sail Storage', type:'Storage', note:'Sail storage and bags'}
-    ];
-  }
+function getSailingRigSectionNote(group){
+  const title = String(group && group.title || '').toUpperCase();
+  if(title.indexOf('TOP') >= 0) return 'Mast-top equipment and masthead fittings.';
+  if(title.indexOf('SPAR') >= 0) return 'Rigid rig elements: masts, booms, poles, foils and fittings.';
+  if(title.indexOf('RIG') >= 0) return 'Standing and running rigging systems.';
+  if(title.indexOf('SAIL') >= 0) return 'Sail inventory and sail-related structure.';
+  return 'Sailing rig structure section.';
+}
 
-  return [
-    {
-      id:'spar',
-      title:'Spar',
-      note:'Masts, booms and primary sailing structure',
-      order:1,
-      is_sailing_root:true,
-      items:sparItems
-    },
-    {
-      id:'rigging',
-      title:'Rigging',
-      note:'Standing and running rigging systems',
-      order:2,
-      is_sailing_root:true,
-      items:[
-        {title:'Standing Rigging', type:'Rigging', note:'Shrouds, stays and fixed support'},
-        {title:'Running Rigging', type:'Rigging', note:'Sheets, halyards and sail controls'},
-        {title:'Winches', type:'Rigging', note:'Primary sail handling winches'},
-        {title:'Rope Storage', type:'Storage', note:'Lines, bags and rope management'}
-      ]
-    },
-    {
-      id:'sails',
-      title:'Sails',
-      note:'Primary sail inventory and handling',
-      order:3,
-      is_sailing_root:true,
-      items:sailItems
+const SO439_READY_METHOD = 'ready_sailing_so439';
+const SO439_TEMPLATE_KEY = 'jeanneau_sun_odyssey_439';
+const SO439_TEMPLATE_TITLE = 'Jeanneau SO439 - 2023';
+
+function so439Slug(text){
+  return String(text || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'item';
+}
+
+function so439Note(confidence, text){
+  const parts = ['Source: SO439 handoff'];
+  if(confidence) parts.push('confidence: ' + confidence);
+  if(text) parts.push(text);
+  return parts.join(' | ');
+}
+
+function so439Eq(title, category, confidence, extra){
+  const id = 'so439_' + so439Slug((category || 'equipment') + '_' + title);
+  return Object.assign({
+    id,
+    title,
+    key:id,
+    type:'Equipment',
+    category:category || 'Equipment',
+    note:so439Note(confidence)
+  }, extra || {});
+}
+
+function so439Area(title, target, category, confidence, extra){
+  return Object.assign({
+    id:'so439_link_' + so439Slug(target || title),
+    title,
+    type:'Area',
+    category:category || 'Area / Zone',
+    note:so439Note(confidence),
+    target
+  }, extra || {});
+}
+
+function so439Layer(id, title, note, order, items, extra){
+  return Object.assign({
+    id,
+    title,
+    note,
+    order,
+    template_key:SO439_TEMPLATE_KEY,
+    template_title:SO439_TEMPLATE_TITLE,
+    edit_policy:'locked_system_template',
+    items
+  }, extra || {});
+}
+
+function so439Node(id, title, note, items){
+  return {
+    id,
+    title,
+    note,
+    template_key:SO439_TEMPLATE_KEY,
+    template_title:SO439_TEMPLATE_TITLE,
+    edit_policy:'locked_system_template',
+    items
+  };
+}
+
+const so439SailingRigRoots = [
+  so439Layer('sailing_bermudan_aft_sails', 'AFT SAILS', 'Bermudan sloop mainsail group for the SO439 prototype.', 1, [
+    so439Eq('Mainsail group', 'AFT SAILS', 'model template'),
+    so439Eq('Furling mainsail', 'AFT SAILS', 'SO439 option'),
+    so439Eq('Classic / full batten mainsail option', 'AFT SAILS', 'optional'),
+    so439Eq('Reefing system', 'AFT SAILS', 'model template'),
+    so439Eq('Trysail / storm mainsail', 'AFT SAILS', 'safety option')
+  ], {
+    is_sailing_root:true,
+    rig_type:'bermudan_sloop',
+    section_key:'aft_sails',
+    database_meaning:'sail_group'
+  }),
+  so439Layer('sailing_bermudan_forward_sails', 'FORWARD SAILS', 'Bermudan sloop headsail and forward sail group for the SO439 prototype.', 2, [
+    so439Eq('Headsail group', 'FORWARD SAILS', 'model template'),
+    so439Eq('Furling genoa', 'FORWARD SAILS', 'model template'),
+    so439Eq('Jib option', 'FORWARD SAILS', 'optional'),
+    so439Eq('Code 0 option', 'FORWARD SAILS', 'optional'),
+    so439Eq('Gennaker / asymmetric option', 'FORWARD SAILS', 'optional'),
+    so439Eq('Storm jib', 'FORWARD SAILS', 'safety option')
+  ], {
+    is_sailing_root:true,
+    rig_type:'bermudan_sloop',
+    section_key:'forward_sails',
+    database_meaning:'sail_group'
+  }),
+  so439Layer('sailing_bermudan_top', 'TOP', 'Main mast top equipment and masthead fittings for the SO439 prototype.', 3, [
+    so439Eq('Main mast top', 'TOP', 'model template'),
+    so439Eq('Masthead navigation light', 'TOP', 'model template'),
+    so439Eq('Anchor light / tricolour', 'TOP', 'model template'),
+    so439Eq('Masthead wind sensor', 'TOP', 'model template'),
+    so439Eq('VHF antenna', 'TOP', 'model template'),
+    so439Eq('Windex / wind vane', 'TOP', 'model template'),
+    so439Eq('Masthead sheaves', 'TOP', 'model template'),
+    so439Eq('Stay / shroud attachment points', 'TOP', 'model template')
+  ], {
+    is_sailing_root:true,
+    rig_type:'bermudan_sloop',
+    section_key:'top',
+    database_meaning:'mast_top',
+    instance_policy:'main_mast_only'
+  }),
+  so439Layer('sailing_bermudan_spar', 'SPAR', 'Main mast, boom, spars, foils and spar fittings for the SO439 prototype.', 4, [
+    so439Eq('Main mast', 'SPAR', 'model template'),
+    so439Eq('Boom', 'SPAR', 'model template'),
+    so439Eq('Spreaders', 'SPAR', 'model template'),
+    so439Eq('Gooseneck fitting', 'SPAR', 'model template'),
+    so439Eq('Mast track / sail track', 'SPAR', 'model template'),
+    so439Eq('Furler foil / headstay foil', 'SPAR', 'model template'),
+    so439Eq('Bowsprit / prodder', 'SPAR', 'optional'),
+    so439Eq('Spinnaker / whisker pole', 'SPAR', 'optional')
+  ], {
+    is_sailing_root:true,
+    rig_type:'bermudan_sloop',
+    section_key:'spar',
+    database_meaning:'spar'
+  }),
+  so439Layer('sailing_bermudan_rigs', 'RIGS', 'Standing and running rigging. The UI label stays RIGS; database meaning is rigging.', 5, [
+    so439Eq('Standing rigging', 'RIGS', 'model template'),
+    so439Eq('Forestay', 'RIGS', 'model template'),
+    so439Eq('Backstay', 'RIGS', 'model template'),
+    so439Eq('Cap shrouds', 'RIGS', 'model template'),
+    so439Eq('Lower shrouds', 'RIGS', 'model template'),
+    so439Eq('Chainplates', 'RIGS', 'model template'),
+    so439Eq('Turnbuckles / bottle screws', 'RIGS', 'model template'),
+    so439Eq('Running rigging', 'RIGS', 'model template'),
+    so439Eq('Main halyard', 'RIGS', 'model template'),
+    so439Eq('Genoa halyard', 'RIGS', 'model template'),
+    so439Eq('Main sheet', 'RIGS', 'model template'),
+    so439Eq('Genoa sheets', 'RIGS', 'model template'),
+    so439Eq('Reefing lines', 'RIGS', 'model template'),
+    so439Eq('Furling line', 'RIGS', 'model template'),
+    so439Eq('Outhaul', 'RIGS', 'model template'),
+    so439Eq('Vang / kicker control line', 'RIGS', 'model template')
+  ], {
+    is_sailing_root:true,
+    rig_type:'bermudan_sloop',
+    section_key:'rigs',
+    database_meaning:'rigging'
+  })
+];
+
+const so439ReadyTreeNodes = [
+  so439Node('so439_cockpit', 'Cockpit', 'Aft cockpit work and guest zone.', [
+    so439Eq('Twin helm stations', 'Cockpit', 'high'),
+    so439Eq('Cockpit table', 'Cockpit', 'high'),
+    so439Eq('Cockpit lockers', 'Cockpit', 'high'),
+    so439Eq('Cockpit shower', 'Cockpit', 'high'),
+    so439Eq('Primary winch positions', 'Cockpit', 'high'),
+    so439Eq('Sail handling from cockpit', 'Cockpit', 'high')
+  ]),
+  so439Node('so439_transom_swim_platform', 'Transom / Swim platform', 'Aft access and boarding platform.', [
+    so439Eq('Swim platform', 'Transom', 'high'),
+    so439Eq('Boarding ladder', 'Transom', 'high')
+  ]),
+  so439Node('so439_coachroof', 'Coachroof', 'Coachroof and companionway sailing controls.', [
+    so439Eq('Companionway', 'Coachroof', 'high'),
+    so439Eq('Sprayhood / dodger', 'Coachroof', 'high'),
+    so439Eq('Rope clutches / deck organizers', 'Coachroof', 'high'),
+    so439Eq('Traveller / mainsheet area', 'Coachroof', 'medium')
+  ]),
+  so439Node('so439_side_decks', 'Port / Starboard side decks', 'Exterior side decks and movement lanes.', [
+    so439Eq('Port side deck', 'Side decks', 'high'),
+    so439Eq('Starboard side deck', 'Side decks', 'high')
+  ]),
+  so439Node('so439_foredeck', 'Foredeck', 'Forward exterior deck and anchoring approach.', [
+    so439Eq('Anchor locker', 'Foredeck', 'high'),
+    so439Eq('Bow fitting / stemhead', 'Foredeck', 'high'),
+    so439Eq('Furler / headstay base area', 'Foredeck', 'high')
+  ]),
+  so439Node('so439_hull_exterior', 'Topsides / hull exterior', 'Visible hull surfaces and hull openings.', [
+    so439Eq('Topsides', 'Hull exterior', 'high'),
+    so439Eq('Hull windows / portlights', 'Hull exterior', 'high')
+  ]),
+  so439Node('so439_keel', 'Keel', 'SO439 keel options.', [
+    so439Eq('Fin keel with bulb', 'Keel', 'high'),
+    so439Eq('Standard draught 2.20 m', 'Keel', 'spec'),
+    so439Eq('Shoal draught 1.60 m option', 'Keel', 'optional')
+  ]),
+  so439Node('so439_rudder', 'Rudder', 'Steering surface under the hull.', [
+    so439Eq('Spade rudder', 'Rudder', 'high')
+  ]),
+  so439Node('so439_propulsion_underwater', 'Saildrive / propeller area', 'Underwater propulsion interface.', [
+    so439Eq('Saildrive leg', 'Underwater propulsion', 'high'),
+    so439Eq('Propeller', 'Underwater propulsion', 'high')
+  ]),
+  so439Node('so439_through_hulls', 'Seacocks / through-hulls', 'Hull penetrations and service valves.', [
+    so439Eq('Seacocks', 'Through-hulls', 'high'),
+    so439Eq('Through-hulls', 'Through-hulls', 'high')
+  ]),
+  so439Node('so439_bow_area_underwater', 'Bow thruster tunnel / area', 'Bow thruster underwater structure.', [
+    so439Eq('Bow thruster tunnel / area', 'Underwater bow', 'optional')
+  ]),
+  so439Node('so439_saloon', 'Saloon', 'Main interior living saloon.', [
+    so439Eq('Saloon table', 'Saloon', 'high')
+  ]),
+  so439Node('so439_galley', 'Galley', 'Galley equipment and service points.', [
+    so439Eq('Stove / oven', 'Galley', 'high'),
+    so439Eq('Refrigerator', 'Galley', 'high'),
+    so439Eq('Sink / faucet', 'Galley', 'high')
+  ]),
+  so439Node('so439_nav_station', 'Nav station', 'Interior navigation and electrical desk.', [
+    so439Eq('Navigation table', 'Nav station', 'high'),
+    so439Eq('Instrument panel location', 'Nav station', 'medium')
+  ]),
+  so439Node('so439_cabins', 'Cabin layout', 'Interior cabin variants; supports 2, 3 and 4 cabin layouts.', [
+    so439Eq('Forward cabin', 'Cabins', 'high'),
+    so439Eq('Port aft cabin', 'Cabins', 'high'),
+    so439Eq('Starboard aft cabin', 'Cabins', 'high'),
+    so439Eq('2-cabin layout option', 'Cabins', 'optional'),
+    so439Eq('3-cabin layout option', 'Cabins', 'optional'),
+    so439Eq('4-cabin layout option', 'Cabins', 'optional')
+  ]),
+  so439Node('so439_heads', 'Heads / showers', 'Head and shower compartments.', [
+    so439Eq('Forward head / shower', 'Heads', 'high'),
+    so439Eq('Aft head / shower', 'Heads', 'high')
+  ]),
+  so439Node('so439_storage', 'Interior lockers', 'Interior storage and lockers.', [
+    so439Eq('Interior lockers', 'Storage', 'high')
+  ]),
+  so439Node('so439_engine_compartment', 'Engine compartment', 'Machinery access compartment.', [
+    so439Eq('Engine compartment', 'Machinery', 'high')
+  ]),
+  so439Node('so439_engine_options', 'Engine options', 'SO439 engine variants.', [
+    so439Eq('Yanmar 3YM30 29 hp option', 'Engine', 'spec option'),
+    so439Eq('Yanmar 3JH5-CE 40 hp option', 'Engine', 'spec option'),
+    so439Eq('Yanmar 4JH5-CE 54 hp option', 'Engine', 'spec option'),
+    so439Eq('Main engine placeholder', 'Engine', 'template')
+  ]),
+  so439Node('so439_saildrive', 'Saildrive', 'Transmission and saildrive interface.', [
+    so439Eq('Saildrive', 'Machinery', 'high')
+  ]),
+  so439Node('so439_fuel_system', 'Fuel system', 'Fuel storage and filtration.', [
+    so439Eq('Fuel tank 200 L', 'Fuel system', 'spec'),
+    so439Eq('Fuel / water separator', 'Fuel system', 'high')
+  ]),
+  so439Node('so439_raw_water_cooling', 'Raw water cooling', 'Raw water inlet and cooling path.', [
+    so439Eq('Raw water intake', 'Cooling', 'high'),
+    so439Eq('Seawater strainer', 'Cooling', 'high'),
+    so439Eq('Heat exchanger', 'Cooling', 'high')
+  ]),
+  so439Node('so439_exhaust_system', 'Exhaust system', 'Engine exhaust and muffler path.', [
+    so439Eq('Muffler / exhaust hose', 'Exhaust', 'high')
+  ]),
+  so439Node('so439_dc_system', 'DC system', 'Primary DC electrical system.', [
+    so439Eq('Service battery bank', 'Electrical', 'high'),
+    so439Eq('Engine start battery', 'Electrical', 'high'),
+    so439Eq('DC panel', 'Electrical', 'high')
+  ]),
+  so439Node('so439_ac_shore_power', 'AC / shore power', 'Shore power and AC distribution.', [
+    so439Eq('Shore power inlet', 'Electrical', 'high'),
+    so439Eq('AC panel', 'Electrical', 'high')
+  ]),
+  so439Node('so439_charging', 'Charging', 'Charging and generation equipment.', [
+    so439Eq('Alternator', 'Electrical', 'high'),
+    so439Eq('Battery charger', 'Electrical', 'high'),
+    so439Eq('Solar panels', 'Electrical', 'optional'),
+    so439Eq('Solar charge controller', 'Electrical', 'optional')
+  ]),
+  so439Node('so439_inverter', 'Inverter', 'Optional inverter system.', [
+    so439Eq('Inverter', 'Electrical', 'optional')
+  ]),
+  so439Node('so439_fresh_water', 'Fresh water', 'Fresh water system.', [
+    so439Eq('Fresh water tank 330 L', 'Plumbing', 'spec'),
+    so439Eq('Pressure pump', 'Plumbing', 'high'),
+    so439Eq('Accumulator tank', 'Plumbing', 'medium'),
+    so439Eq('Water heater / boiler', 'Plumbing', 'high')
+  ]),
+  so439Node('so439_black_water', 'Holding tanks', 'Black water holding tanks.', [
+    so439Eq('Holding tanks', 'Plumbing', 'high')
+  ]),
+  so439Node('so439_plumbing_heads', 'Marine toilets', 'Toilet and head plumbing.', [
+    so439Eq('Marine toilets', 'Plumbing', 'high')
+  ]),
+  so439Node('so439_bilge', 'Bilge', 'Bilge pumping and alarms.', [
+    so439Eq('Manual bilge pump', 'Bilge', 'high'),
+    so439Eq('Electric bilge pump', 'Bilge', 'high'),
+    so439Eq('Bilge float switch / alarm', 'Bilge', 'high')
+  ]),
+  so439Node('so439_plumbing_seacocks', 'Through-hulls / seacocks', 'Plumbing seacocks and hull valves.', [
+    so439Eq('Through-hulls / seacocks', 'Plumbing', 'high')
+  ]),
+  so439Node('so439_anchoring', 'Anchoring', 'Anchor and windlass equipment.', [
+    so439Eq('Anchor', 'Deck equipment', 'high'),
+    so439Eq('Chain / rode', 'Deck equipment', 'high'),
+    so439Eq('Windlass', 'Deck equipment', 'high')
+  ]),
+  so439Node('so439_winches', 'Winches', 'Primary and secondary winches.', [
+    so439Eq('Primary winches', 'Deck equipment', 'high'),
+    so439Eq('Secondary / coachroof winches', 'Deck equipment', 'high'),
+    so439Eq('Electric winch', 'Deck equipment', 'optional')
+  ]),
+  so439Node('so439_sail_handling', 'Sail handling hardware', 'Deck hardware for sail handling.', [
+    so439Eq('Rope clutches', 'Deck equipment', 'high'),
+    so439Eq('Deck organizers', 'Deck equipment', 'high'),
+    so439Eq('Tracks / cars', 'Deck equipment', 'high')
+  ]),
+  so439Node('so439_canvas', 'Canvas', 'Weather protection canvas.', [
+    so439Eq('Sprayhood / dodger', 'Canvas', 'high'),
+    so439Eq('Bimini', 'Canvas', 'optional')
+  ]),
+  so439Node('so439_exterior_equipment', 'Exterior comfort equipment', 'Cockpit and boarding equipment.', [
+    so439Eq('Cockpit cushions', 'Deck equipment', 'optional'),
+    so439Eq('Swim ladder', 'Deck equipment', 'high')
+  ]),
+  so439Node('so439_helm', 'Twin helm', 'Twin wheel helm stations.', [
+    so439Eq('Twin steering wheels', 'Steering', 'high')
+  ]),
+  so439Node('so439_steering_system', 'Steering linkage', 'Steering transmission hardware.', [
+    so439Eq('Quadrant / cables / linkage', 'Steering', 'high')
+  ]),
+  so439Node('so439_steering_rudder', 'Rudder blade', 'Rudder blade and steering surface.', [
+    so439Eq('Rudder blade', 'Steering', 'high')
+  ]),
+  so439Node('so439_autopilot', 'Autopilot', 'Autopilot drive and control.', [
+    so439Eq('Autopilot drive / control', 'Steering', 'optional')
+  ]),
+  so439Node('so439_emergency_steering', 'Emergency steering', 'Emergency tiller equipment.', [
+    so439Eq('Emergency tiller', 'Steering', 'high')
+  ]),
+  so439Node('so439_navigation_helm', 'Helm electronics', 'Helm and cockpit navigation electronics.', [
+    so439Eq('Chartplotter', 'Navigation', 'high'),
+    so439Eq('Wind display', 'Navigation', 'high'),
+    so439Eq('Speed / depth display', 'Navigation', 'high')
+  ]),
+  so439Node('so439_navigation_station_electronics', 'Nav station electronics', 'Communication and nav station equipment.', [
+    so439Eq('VHF radio', 'Navigation', 'high'),
+    so439Eq('AIS', 'Navigation', 'optional')
+  ]),
+  so439Node('so439_sensors', 'Sensors', 'Transducers and magnetic navigation.', [
+    so439Eq('Navigation wind sensor', 'Navigation', 'high'),
+    so439Eq('Depth / speed transducer', 'Navigation', 'high'),
+    so439Eq('Compass', 'Navigation', 'high')
+  ]),
+  so439Node('so439_lifesaving', 'Lifesaving', 'Personal and vessel lifesaving gear.', [
+    so439Eq('Liferaft', 'Safety', 'required'),
+    so439Eq('Lifejackets', 'Safety', 'required'),
+    so439Eq('Harnesses / tethers', 'Safety', 'required')
+  ]),
+  so439Node('so439_mob', 'MOB', 'Man-overboard equipment.', [
+    so439Eq('Horseshoe buoy', 'Safety', 'required')
+  ]),
+  so439Node('so439_emergency_safety', 'Emergency signaling', 'Emergency communications and signaling.', [
+    so439Eq('EPIRB', 'Safety', 'required/offshore')
+  ]),
+  so439Node('so439_fire', 'Fire safety', 'Fire suppression and fire response.', [
+    so439Eq('Fire extinguishers', 'Safety', 'required'),
+    so439Eq('Fire blanket', 'Safety', 'required')
+  ]),
+  so439Node('so439_bilge_flooding', 'Emergency bilge', 'Emergency flood and bilge equipment.', [
+    so439Eq('Emergency bilge equipment', 'Safety', 'required')
+  ])
+];
+
+const so439ReadyRootLayers = [
+  so439Layer('so439_identity', 'Template Identity', 'Locked template metadata for Jeanneau SO439 - 2023.', 30, [
+    so439Eq('Jeanneau SO439 - 2023', 'Template identity', 'user named'),
+    so439Eq('Jeanneau Sun Odyssey 439 source template', 'Template identity', 'handoff'),
+    so439Eq('Owner additions are stored in custom layer', 'Template identity', 'policy')
+  ]),
+  so439Layer('so439_hull_type_layer', 'Hull Type Layer', 'Physical hull/deck layout: sailing yacht, monohull, Bermudan fractional sloop.', 40, [
+    so439Eq('Sailing yacht', 'Hull type', 'template'),
+    so439Eq('Monohull', 'Hull type', 'template'),
+    so439Eq('Bermudan sloop', 'Rig summary', 'template'),
+    so439Eq('Fractional sloop', 'Rig summary', 'handoff')
+  ]),
+  so439Layer('so439_deck_exterior', 'Deck / Exterior', 'SO439 deck and exterior structure.', 50, [
+    so439Area('Cockpit', 'so439_cockpit', 'Deck / Exterior', 'high'),
+    so439Area('Transom / Swim platform', 'so439_transom_swim_platform', 'Deck / Exterior', 'high'),
+    so439Area('Coachroof', 'so439_coachroof', 'Deck / Exterior', 'high'),
+    so439Area('Port / Starboard side decks', 'so439_side_decks', 'Deck / Exterior', 'high'),
+    so439Area('Foredeck', 'so439_foredeck', 'Deck / Exterior', 'high')
+  ]),
+  so439Layer('so439_hull_underwater', 'Hull / Underwater', 'Hull shell, keel, rudder, underwater propulsion and hull penetrations.', 60, [
+    so439Area('Topsides / hull exterior', 'so439_hull_exterior', 'Hull / Underwater', 'high'),
+    so439Area('Keel', 'so439_keel', 'Hull / Underwater', 'high'),
+    so439Area('Rudder', 'so439_rudder', 'Hull / Underwater', 'high'),
+    so439Area('Saildrive / propeller area', 'so439_propulsion_underwater', 'Hull / Underwater', 'high'),
+    so439Area('Seacocks / through-hulls', 'so439_through_hulls', 'Hull / Underwater', 'high'),
+    so439Area('Bow thruster tunnel / area', 'so439_bow_area_underwater', 'Hull / Underwater', 'optional')
+  ]),
+  so439Layer('so439_interior', 'Interior', 'SO439 accommodation and interior service areas.', 70, [
+    so439Area('Saloon', 'so439_saloon', 'Interior', 'high'),
+    so439Area('Galley', 'so439_galley', 'Interior', 'high'),
+    so439Area('Nav station', 'so439_nav_station', 'Interior', 'high'),
+    so439Area('Cabin layout', 'so439_cabins', 'Interior', 'high'),
+    so439Area('Heads / showers', 'so439_heads', 'Interior', 'high'),
+    so439Area('Interior lockers', 'so439_storage', 'Interior', 'high')
+  ]),
+  so439Layer('so439_machinery', 'Machinery', 'Engine, fuel, cooling and exhaust systems.', 80, [
+    so439Area('Engine compartment', 'so439_engine_compartment', 'Machinery', 'high'),
+    so439Area('Engine options', 'so439_engine_options', 'Machinery', 'spec options'),
+    so439Area('Saildrive', 'so439_saildrive', 'Machinery', 'high'),
+    so439Area('Fuel system', 'so439_fuel_system', 'Machinery', 'high'),
+    so439Area('Raw water cooling', 'so439_raw_water_cooling', 'Machinery', 'high'),
+    so439Area('Exhaust system', 'so439_exhaust_system', 'Machinery', 'high')
+  ]),
+  so439Layer('so439_electrical', 'Electrical', 'SO439 electrical distribution, charging and inverter options.', 90, [
+    so439Area('DC system', 'so439_dc_system', 'Electrical', 'high'),
+    so439Area('AC / shore power', 'so439_ac_shore_power', 'Electrical', 'high'),
+    so439Area('Charging', 'so439_charging', 'Electrical', 'high'),
+    so439Area('Inverter', 'so439_inverter', 'Electrical', 'optional')
+  ]),
+  so439Layer('so439_plumbing', 'Plumbing', 'Fresh water, holding tank, heads, bilge and seacock systems.', 100, [
+    so439Area('Fresh water', 'so439_fresh_water', 'Plumbing', 'high'),
+    so439Area('Holding tanks', 'so439_black_water', 'Plumbing', 'high'),
+    so439Area('Marine toilets', 'so439_plumbing_heads', 'Plumbing', 'high'),
+    so439Area('Bilge', 'so439_bilge', 'Plumbing', 'high'),
+    so439Area('Through-hulls / seacocks', 'so439_plumbing_seacocks', 'Plumbing', 'high')
+  ]),
+  so439Layer('so439_deck_equipment', 'Deck Equipment', 'Deck hardware, anchoring, winches, sail-handling and canvas.', 110, [
+    so439Area('Anchoring', 'so439_anchoring', 'Deck Equipment', 'high'),
+    so439Area('Winches', 'so439_winches', 'Deck Equipment', 'high'),
+    so439Area('Sail handling hardware', 'so439_sail_handling', 'Deck Equipment', 'high'),
+    so439Area('Canvas', 'so439_canvas', 'Deck Equipment', 'optional'),
+    so439Area('Exterior comfort equipment', 'so439_exterior_equipment', 'Deck Equipment', 'optional')
+  ]),
+  so439Layer('so439_steering', 'Steering', 'Steering wheels, linkage, rudder blade, autopilot and emergency tiller.', 120, [
+    so439Area('Twin helm', 'so439_helm', 'Steering', 'high'),
+    so439Area('Steering linkage', 'so439_steering_system', 'Steering', 'high'),
+    so439Area('Rudder blade', 'so439_steering_rudder', 'Steering', 'high'),
+    so439Area('Autopilot', 'so439_autopilot', 'Steering', 'optional'),
+    so439Area('Emergency steering', 'so439_emergency_steering', 'Steering', 'high')
+  ]),
+  so439Layer('so439_navigation_electronics', 'Navigation & Electronics', 'Helm electronics, nav station electronics and sensors.', 130, [
+    so439Area('Helm electronics', 'so439_navigation_helm', 'Navigation & Electronics', 'high'),
+    so439Area('Nav station electronics', 'so439_navigation_station_electronics', 'Navigation & Electronics', 'high'),
+    so439Area('Sensors', 'so439_sensors', 'Navigation & Electronics', 'high')
+  ]),
+  so439Layer('so439_safety', 'Safety', 'Safety inventory and emergency equipment.', 140, [
+    so439Area('Lifesaving', 'so439_lifesaving', 'Safety', 'required'),
+    so439Area('MOB', 'so439_mob', 'Safety', 'required'),
+    so439Area('Emergency signaling', 'so439_emergency_safety', 'Safety', 'required'),
+    so439Area('Fire safety', 'so439_fire', 'Safety', 'required'),
+    so439Area('Emergency bilge', 'so439_bilge_flooding', 'Safety', 'required')
+  ])
+];
+
+function getSo439SailingReadyRoots(){
+  return so439SailingRigRoots;
+}
+
+function getSo439ReadyRootLayers(){
+  return so439ReadyRootLayers;
+}
+
+function getSo439ReadyTreeNodes(){
+  return so439ReadyTreeNodes;
+}
+
+function isReadySailingSO439Yacht(yacht){
+  const y = yacht || (typeof getActiveYacht === 'function' ? getActiveYacht() : null);
+  if(!y) return false;
+  return y.startMethod === SO439_READY_METHOD
+    || !!(y.meta && y.meta.template === SO439_TEMPLATE_KEY);
+}
+
+function isReadyYacht(yacht){
+  const y = yacht || (typeof getActiveYacht === 'function' ? getActiveYacht() : null);
+  if(!y) return false;
+  return y.startMethod === 'ready_motor'
+    || isReadySailingSO439Yacht(y)
+    || !!(y.meta && y.meta.template === 'ready_motor_yacht_structure');
+}
+
+function getActiveReadyTreeNodes(){
+  return isReadySailingSO439Yacht()
+    ? getSo439ReadyTreeNodes().concat(treeNodes || [])
+    : treeNodes;
+}
+
+function collectSo439EquipmentItems(){
+  const items = [];
+  getSo439SailingReadyRoots()
+    .concat(getSo439ReadyRootLayers())
+    .concat(getSo439ReadyTreeNodes())
+    .forEach(container => {
+      (container.items || []).forEach(item => {
+        if(item && item.key && itemKind(item) === 'equipment'){
+          items.push(item);
+        }
+      });
+    });
+  return items;
+}
+
+function ensureSo439EquipmentDefaults(){
+  if(typeof equipmentStore === 'undefined' || typeof defaultEquipmentStore === 'undefined') return;
+
+  collectSo439EquipmentItems().forEach(item => {
+    const template = [{
+      id:item.key + '_instance_1',
+      name:item.title,
+      service_ref:item.key + '_instance_1',
+      source_template:SO439_TEMPLATE_KEY
+    }];
+
+    if(!equipmentStore[item.key]){
+      equipmentStore[item.key] = JSON.parse(JSON.stringify(template));
     }
-  ];
+    if(!defaultEquipmentStore[item.key]){
+      defaultEquipmentStore[item.key] = JSON.parse(JSON.stringify(template));
+    }
+  });
+}
+
+function getSo439StructureTemplateGroups(){
+  return getSo439SailingReadyRoots()
+    .concat(getSo439ReadyRootLayers())
+    .map(layer => ({
+      id:'template_' + layer.id,
+      title:layer.title,
+      source_layer:layer.id,
+      type:layer.is_sailing_root ? 'Sailing rig section' : 'Structure layer',
+      items:(layer.items || []).map(item => ({
+        id:item.id || so439Slug(layer.id + '_' + item.title),
+        title:item.title,
+        type:item.type || 'Equipment',
+        target:item.target || '',
+        key:item.key || '',
+        category:item.category || layer.title,
+        note:item.note || ''
+      }))
+    }));
+}
+
+function getSo439StructureTemplateRecord(){
+  const groups = getSo439StructureTemplateGroups();
+  const itemCount = groups.reduce((sum, group) => sum + (group.items || []).length, 0);
+  return {
+    id:SO439_TEMPLATE_KEY,
+    title:SO439_TEMPLATE_TITLE,
+    template_key:SO439_TEMPLATE_KEY,
+    category:'sailing_yacht',
+    hull_type:'monohull',
+    rig_type:'bermudan_sloop',
+    rig_subtype:'fractional_sloop',
+    manufacturer:'Jeanneau',
+    model:'Sun Odyssey 439',
+    year:'2023',
+    policy:'locked_system_template_owner_custom_layer',
+    note:'Ready-made sailing monohull prototype from the SO439 handoff. Sailing rig sections stay separate from hull/deck systems.',
+    stats:{
+      groups:groups.length,
+      items:itemCount
+    },
+    groups
+  };
 }
 
 
@@ -766,23 +1285,110 @@ function attachLibraryEquipmentToArea(areaId, libraryItemId){
   return true;
 }
 
+function attachLibraryEquipmentToHull(hullId, libraryItemId){
+  state.builder = normalizeBuilderModel(state.builder, state.builderHullCount);
+  const hullIndex = (state.builder.hulls || []).findIndex(h => h.id === hullId);
+  const hull = hullIndex >= 0 ? state.builder.hulls[hullIndex] : null;
+  const equipment = createBuilderEquipmentObjectFromLibrary(libraryItemId);
+
+  if(!hull || !equipment) return false;
+  if(isBuilderLocked(hullId)) return false;
+
+  state.builder.hulls[hullIndex] = {
+    ...hull,
+    equipment:[
+      ...(Array.isArray(hull.equipment) ? hull.equipment : []),
+      equipment
+    ]
+  };
+
+  saveState();
+  renderBuilderHullScreen(hullId, false);
+  return true;
+}
+
+function isSailingLibraryItemAllowedForRoot(rootId, libraryItemId){
+  const groups = getReadyLibraryGroups({scope:'sailing_rig', rootId});
+  return groups.some(group => (group.items || []).some(item => item && item.id === libraryItemId));
+}
+
+function createSailingRootEquipmentFromLibrary(rootId, libraryItemId){
+  if(!isSailingLibraryItemAllowedForRoot(rootId, libraryItemId)) return null;
+
+  const bridgeItem = findReadyLibraryBridgeItem(libraryItemId);
+  if(!bridgeItem || bridgeItem.source !== 'admin_base_sailing') return null;
+
+  const now = Date.now();
+
+  return {
+    id:'sailing_item_' + now + '_' + Math.random().toString(36).slice(2,7),
+    type:'equipment',
+    title:bridgeItem.title,
+    note:bridgeItem.category || getSailingBuilderRootTitle(rootId),
+    key:bridgeItem.key || slugifyCustomKey(bridgeItem.title || bridgeItem.raw_id || 'sailing-equipment'),
+    locked:false,
+    fromLibrary:true,
+    library_item_id:bridgeItem.raw_id,
+    library_ref:bridgeItem.id,
+    library_source:bridgeItem.source,
+    library_group_id:bridgeItem.group_id,
+    library_category:bridgeItem.category,
+    children:[],
+    instances:[{
+      id:'instance_' + now,
+      title:bridgeItem.title + ' #1',
+      service_link:null,
+      notes:[]
+    }],
+    createdAt:new Date().toISOString(),
+    updatedAt:new Date().toISOString()
+  };
+}
+
+function attachSailingRootLibraryEquipment(rootId, libraryItemId){
+  const root = getSailingBuilderRoot(rootId || getDefaultSailingBuilderRootId());
+  const equipment = createSailingRootEquipmentFromLibrary(rootId, libraryItemId);
+
+  if(!root || !equipment) return false;
+
+  if(!Array.isArray(root.items)) root.items = [];
+  root.items.push(equipment);
+
+  saveState();
+  openSailingBuilderRoot(rootId, false);
+  return true;
+}
+
+function attachLibraryEquipmentToBuilderTarget(targetType, targetId, libraryItemId){
+  if(targetType === 'sailing_root') return attachSailingRootLibraryEquipment(targetId, libraryItemId);
+  if(targetType === 'deck') return attachLibraryEquipmentToDeck(targetId, libraryItemId);
+  if(targetType === 'hull') return attachLibraryEquipmentToHull(targetId, libraryItemId);
+  return attachLibraryEquipmentToArea(targetId, libraryItemId);
+}
+
 
 normalizeEquipmentLibraryFromStore();
 
 
 const defaultEquipmentStore = JSON.parse(JSON.stringify(equipmentStore));
+ensureSo439EquipmentDefaults();
 
 function resetEquipmentStoreToDefault(){
   Object.keys(equipmentStore).forEach(key => delete equipmentStore[key]);
   Object.assign(equipmentStore, JSON.parse(JSON.stringify(defaultEquipmentStore)));
+  ensureSo439EquipmentDefaults();
+  syncReadyTemplateEquipmentDefaults();
 }
 
 const STORAGE_KEY = 'yfd_state_v1';
+const YFD_QUICK_SHOT_ENABLED = false;
 
 const state = {
   stickers: {},
+  tasks: {},
   overrides: {},
   readyLocks: {},
+  readyTemplateAdds: [],
   enabled: {
     hardtop: true,
     flybridge: true,
@@ -810,8 +1416,10 @@ function saveState(){
       enabled: state.enabled,
       custom: state.custom,
       stickers: state.stickers,
+      tasks: state.tasks,
       overrides: state.overrides,
       readyLocks: state.readyLocks,
+      readyTemplateAdds: state.readyTemplateAdds,
       yachts: state.yachts,
       activeYachtId: state.activeYachtId,
       builderHullCount: state.builderHullCount,
@@ -835,8 +1443,10 @@ function loadState(){
     if(saved.enabled) Object.assign(state.enabled, saved.enabled);
     if(Array.isArray(saved.custom)) state.custom = saved.custom;
     if(saved.stickers) state.stickers = saved.stickers;
+    if(saved.tasks) state.tasks = saved.tasks;
     if(saved.overrides) state.overrides = saved.overrides;
     if(saved.readyLocks) state.readyLocks = saved.readyLocks;
+    if(Array.isArray(saved.readyTemplateAdds)) state.readyTemplateAdds = saved.readyTemplateAdds;
     if(Array.isArray(saved.yachts)) state.yachts = saved.yachts;
     if(saved.activeYachtId) state.activeYachtId = saved.activeYachtId;
     if(saved.builderHullCount) state.builderHullCount = saved.builderHullCount;
@@ -854,6 +1464,10 @@ function loadState(){
         equipmentStore[key] = saved.equipmentStore[key];
       });
     }
+
+    applyReadyTemplateAdds();
+    ensureSo439EquipmentDefaults();
+    syncReadyTemplateEquipmentDefaults();
 
     normalizeEquipmentLibraryFromStore();
   }catch(e){
@@ -930,6 +1544,14 @@ function getAllLayers(){
   removeLegacyOwnerDeckCustom01();
   const yacht = getActiveYacht();
 
+  if(isReadySailingSO439Yacht(yacht)){
+    return [
+      ...getSo439SailingReadyRoots(),
+      ...getSo439ReadyRootLayers(),
+      ...state.custom
+    ];
+  }
+
   const sailingRoots = (
     yacht &&
     yacht.vesselType === 'sailing'
@@ -982,6 +1604,15 @@ function getAllLayers(){
 function getConfigurableLayers(){
   removeLegacyOwnerDeckCustom01();
   const yacht = getActiveYacht();
+
+  if(isReadySailingSO439Yacht(yacht)){
+    return [
+      ...getSo439SailingReadyRoots(),
+      ...getSo439ReadyRootLayers(),
+      ...state.custom
+    ];
+  }
+
   const sailingRoots = yacht && yacht.vesselType === 'sailing'
     ? getSailingOperationalRoots(yacht.rig || 'bermudan_sloop')
     : [];
@@ -1032,10 +1663,11 @@ function getVisibleLayers(){
 }
 
 function getLayer(id){
-  return [...getAllLayers(), ...treeNodes].find(layer => layer.id === id);
+  return [...getAllLayers(), ...getActiveReadyTreeNodes()].find(layer => layer.id === id);
 }
 
 let navStack = [];
+let yfdForwardStack = [];
 
 const modalState = {
   addItemModuleId: null,
@@ -1191,6 +1823,8 @@ function closeSideMenu(){
 }
 
 function renderQuickShotButton(){
+  if(!YFD_QUICK_SHOT_ENABLED) return '';
+
   return `
     <button class="yfd-quick-shot" data-quick-shot type="button" aria-label="Quick Shot">
       <span>📷</span>
@@ -1199,13 +1833,7 @@ function renderQuickShotButton(){
 }
 
 function renderGalleryButton(){
-  return `
-    <button class="yfd-gallery-shot" data-open-gallery type="button" aria-label="Gallery">
-      <span class="yfd-gallery-icon" aria-hidden="true">
-        <i></i><b></b>
-      </span>
-    </button>
-  `;
+  return '';
 }
 
 function openGalleryStub(){
@@ -1243,8 +1871,40 @@ function openGalleryStub(){
 let yfdLastBackAt = 0;
 
 
+function renderForwardButton(){
+  if(!Array.isArray(yfdForwardStack) || !yfdForwardStack.length) return '';
+  return `<button class="yfd-action-forward yfd-nav-arrow yfd-nav-arrow-forward" data-forward type="button" aria-label="Forward"><span aria-hidden="true">&rsaquo;</span></button>`;
+}
+
+function yfdClearForwardStack(){
+  yfdForwardStack = [];
+}
+
+function yfdRenderScreenState(screenState, push=true){
+  if(!screenState || !screenState.screen) return;
+
+  if(screenState.screen === 'custom_builder') renderCustomBuilderScreenV2(push);
+  else if(screenState.screen === 'builder_hull') renderBuilderHullScreen(screenState.hullId, push);
+  else if(screenState.screen === 'builder_deck') renderBuilderDeckScreen(screenState.deckId, push);
+  else if(screenState.screen === 'builder_area') renderBuilderAreaScreen(screenState.areaId, push);
+  else if(screenState.screen === 'builder_equipment') renderBuilderEquipmentScreen(screenState.equipmentId, push);
+  else if(screenState.screen === 'sailing_builder_root') openSailingBuilderRoot(screenState.rootId, push);
+  else if(screenState.screen === 'sailing_root_item') openSailingRootItemScreen(screenState.itemId, push);
+  else if(screenState.screen === 'ready_yacht') renderReadyMadeYachtScreen(push);
+  else if(screenState.screen === 'module') renderModule(screenState.id, push);
+  else if(screenState.screen === 'equipment') renderEquipment(screenState.title, push);
+  else if(screenState.screen === 'admin_base_tool') renderAdminBaseToolScreen(push);
+  else renderOverview();
+}
+
+function goForward(){
+  const next = yfdForwardStack.pop();
+  if(!next) return;
+  yfdRenderScreenState(next, true);
+}
+
 function findReadyModuleParent(moduleId){
-  const layers = [...getAllLayers(), ...treeNodes];
+  const layers = [...getAllLayers(), ...getActiveReadyTreeNodes()];
 
   for(const layer of layers){
     for(const item of (layer.items || [])){
@@ -1263,6 +1923,7 @@ function forceBack(){
   yfdLastBackAt = now;
 
   const current = navStack.pop();
+  if(current && current.screen) yfdForwardStack.push({...current});
 
   if(current && current.screen === 'builder_area'){
     const found = findBuilderArea(current.areaId);
@@ -1588,7 +2249,9 @@ function normalizeBuilderModel(builder, hullCount){
     return {
       id,
       title,
-      decks
+      decks,
+      children: existing && Array.isArray(existing.children) ? existing.children : [],
+      equipment: existing && Array.isArray(existing.equipment) ? existing.equipment : []
     };
   });
 
@@ -1721,6 +2384,51 @@ function openBuilderAddChildModal(deckId, childType){
   }, 50);
 }
 
+function renderBuilderAddItemChoiceModal(opts){
+  const o = opts || {};
+  const context = yfdEscapeAttr(o.context || 'Custom module');
+  const inputId = yfdEscapeAttr(o.inputId || 'yfdBuilderChildName');
+  const parentType = yfdEscapeAttr(o.parentType || 'deck');
+  const parentId = yfdEscapeAttr(o.parentId || '');
+  const createAttr = o.createAttr || 'data-builder-create-child';
+  const equipmentPlaceholder = yfdEscapeAttr(o.equipmentPlaceholder || 'Pump, Bar, Diving Station');
+  const areaPlaceholder = yfdEscapeAttr(o.areaPlaceholder || 'Area / Zone');
+  const note = yfdEscapeAttr(o.note || 'Library items use the same Main Equipment Base as ready-made yacht mode.');
+
+  return `
+    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
+      <section class="yfd-builder-modal yfd-builder-kind-modal yfd-action-modal yfd-builder-create-item-modal" role="dialog" aria-modal="true">
+        <div class="yfd-action-head">
+          <div>
+            <span>${context}</span>
+            <strong>Add item</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">&times;</button>
+        </div>
+
+        <div class="yfd-choice-grid yfd-add-item-segments" role="group" aria-label="Add item type">
+          <button class="yfd-choice is-selected" data-builder-kind-select="equipment" data-builder-kind-target-input="${inputId}" data-builder-kind-placeholder="${equipmentPlaceholder}" type="button">
+            <strong>Equipment</strong>
+          </button>
+          <button class="yfd-choice" data-builder-kind-select="area" data-builder-kind-target-input="${inputId}" data-builder-kind-placeholder="${areaPlaceholder}" type="button">
+            <strong>Area / Zone</strong>
+          </button>
+        </div>
+
+        <label class="yfd-field">
+          <span>Item name</span>
+          <input id="${inputId}" type="text" placeholder="${equipmentPlaceholder}">
+        </label>
+
+        <button class="yfd-primary-action" ${createAttr} type="button">Create item</button>
+        <button class="yfd-secondary-action yfd-ready-library-open-btn" data-builder-equipment-library-action data-builder-library-open="${parentType}" data-builder-library-id="${parentId}" type="button">From equipment library</button>
+
+        <div class="yfd-builder-modal-note">${note}</div>
+      </section>
+    </div>
+  `;
+}
+
 function submitBuilderAddChildModal(){
   if(builderModalState.type !== 'child') return;
   const input = document.getElementById('yfdBuilderChildName');
@@ -1756,7 +2464,7 @@ function createBuilderDeck(title, scope, hullId){
     const hull = state.builder.hulls.find(h => h.id === safeHullId);
     if(hull) hull.decks.push(deck);
   } else {
-    state.builder.sharedDecks.push(deck);
+    state.builder.sharedDecks.unshift(deck);
   }
 
   saveState();
@@ -2094,6 +2802,11 @@ function refreshAfterBuilderEdit(){
   if(current && current.screen === 'builder_equipment') renderBuilderEquipmentScreen(current.equipmentId, false);
   else if(current && current.screen === 'builder_area') renderBuilderAreaScreen(current.areaId, false);
   else if(current && current.screen === 'builder_deck') renderBuilderDeckScreen(current.deckId, false);
+  else if(current && current.screen === 'builder_hull') renderBuilderHullScreen(current.hullId, false);
+  else if(current && current.screen === 'sailing_builder_root') openSailingBuilderRoot(current.rootId, false);
+  else if(current && current.screen === 'sailing_root_item') openSailingRootItemScreen(current.itemId, false);
+  else if(current && current.screen === 'module') renderModule(current.id, false);
+  else if(current && current.screen === 'equipment') renderEquipment(current.title, false);
   else renderCustomBuilderScreenV2(false);
 }
 
@@ -2103,22 +2816,23 @@ function renderBuilderDeleteInstanceModal(instanceId){
 
   return `
     <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
+      <section class="yfd-builder-modal yfd-action-modal yfd-ready-delete-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
+        <div class="yfd-action-head">
           <div>
             <span>Delete instance</span>
             <strong>${title}</strong>
           </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">&times;</button>
         </div>
 
-        <div class="yfd-builder-modal-note yfd-builder-delete-note">
-          This removes only this builder instance. Future service/cardholder records are not handled here.
+        <div class="yfd-service-hook">
+          <p>This removes only this user-created instance from this yacht structure.</p>
+          <p>Future service/cardholder history must not be deleted automatically.</p>
         </div>
 
-        <div class="yfd-builder-modal-actions">
+        <div class="yfd-builder-modal-actions yfd-ready-delete-actions">
           <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
-          <button class="yfd-danger-action" data-confirm-delete-builder-instance="${instanceId}" type="button">Delete instance</button>
+          <button class="yfd-danger-action" data-confirm-delete-builder-instance="${instanceId}" type="button">Delete item</button>
         </div>
       </section>
     </div>
@@ -2174,31 +2888,33 @@ function renderBuilderEditModal(type, id){
 
   return `
     <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
+      <section class="yfd-builder-modal yfd-action-modal yfd-builder-card-text-modal" role="dialog" aria-modal="true">
+        <div class="yfd-action-head">
           <div>
-            <span>Builder edit</span>
-            <strong>${type}</strong>
+            <span>Builder card</span>
+            <strong>Edit name & subtitle</strong>
           </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">&times;</button>
         </div>
 
         <label class="yfd-field">
-          <span>Title</span>
+          <span>Name</span>
           <input id="yfdBuilderEditTitle" type="text" value="${title}">
         </label>
 
         ${type !== 'instance' ? `
           <label class="yfd-field">
-            <span>Note</span>
-            <input id="yfdBuilderEditNote" type="text" value="${note}">
+            <span>Subtitle</span>
+            <input id="yfdBuilderEditNote" type="text" value="${note}" placeholder="Equipment, Area / Zone, Deck">
           </label>
         ` : ''}
 
-        <div class="yfd-builder-modal-actions">
-          <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
-          <button class="yfd-primary-action" data-save-builder-edit="${id}" data-builder-edit-type="${type}" type="button">Save edit</button>
+        <div class="yfd-builder-modal-note">
+          Object identity stays connected by key/id; this changes only the visible card text.
         </div>
+
+        <button class="yfd-primary-action" data-save-builder-edit="${id}" data-builder-edit-type="${type}" type="button">Save</button>
+        <button class="yfd-secondary-action" data-clear-builder-edit="${id}" data-builder-edit-type="${type}" type="button">Clear custom text</button>
       </section>
     </div>
   `;
@@ -2243,21 +2959,72 @@ function saveBuilderEdit(type, id){
   refreshAfterBuilderEdit(type, id);
 }
 
+function getBuilderDefaultTextForTarget(type, target){
+  if(!target) return {title:'', note:''};
+
+  if(target.fromLibrary && target.library_ref && typeof findReadyLibraryBridgeItem === 'function'){
+    const bridge = findReadyLibraryBridgeItem(target.library_ref);
+    if(bridge){
+      return {
+        title:bridge.title || target.title || '',
+        note:type === 'equipment' ? 'Attached from equipment library' : (target.note || '')
+      };
+    }
+  }
+
+  const fallbackTitle =
+    target.baseTitle ||
+    target.base_title ||
+    target.defaultTitle ||
+    target.default_title ||
+    target.key ||
+    target.title ||
+    '';
+
+  return {
+    title:fallbackTitle,
+    note:type === 'instance' ? (target.note || '') : ''
+  };
+}
+
+function clearBuilderEdit(type, id){
+  const found = findBuilderEditTarget(type, id);
+  if(!found || !found.target) return;
+
+  const defaults = getBuilderDefaultTextForTarget(type, found.target);
+  if(defaults.title) found.target.title = defaults.title;
+  if(type !== 'instance') found.target.note = defaults.note || '';
+
+  closeBuilderModal();
+  saveState();
+  refreshAfterBuilderEdit(type, id);
+}
+
 function renderBuilderEditButton(type, id){
   return `<button class="yfd-builder-delete-btn yfd-builder-edit-btn yfd-builder-icon-btn" data-builder-edit="${id}" data-builder-edit-type="${type}" type="button" title="Edit" aria-label="Edit">✎</button>`;
 }
 
 function renderBuilderScreenControls(type, id, locked){
   const safeType = type === 'equipment' ? 'equipment' : type === 'deck' ? 'deck' : 'area';
-  const deleteButton = safeType === 'deck'
-    ? `<button class="yfd-builder-delete-btn yfd-builder-screen-delete" data-delete-builder-deck="${id}" type="button" aria-label="Delete deck">Delete</button>`
-    : `<button class="yfd-builder-delete-btn yfd-builder-screen-delete" data-delete-builder-item="${id}" data-builder-item-type="${safeType}" type="button" aria-label="Delete ${safeType}">Delete</button>`;
+  const found = findBuilderEditTarget(safeType, id);
+  const title = found && found.target ? (found.target.title || safeType) : safeType;
+  const objectLabel = safeType === 'deck'
+    ? `Deck: ${title}`
+    : safeType === 'equipment'
+      ? `Equipment: ${title}`
+      : `Area / Zone: ${title}`;
 
   return `
     <div class="yfd-builder-screen-controls yfd-builder-${safeType}-screen-controls" aria-label="${safeType} controls">
-      ${renderBuilderLockControl(id, !!locked)}
-      ${renderBuilderEditButton(safeType, id)}
-      ${deleteButton}
+      ${renderYfdContextObjectCard({
+        kind:safeType,
+        id,
+        title,
+        displayTitle:getYfdActiveVesselLabel(),
+        displaySubtitle:objectLabel,
+        editType:safeType,
+        deleteType:safeType
+      })}
     </div>
   `;
 }
@@ -2338,40 +3105,26 @@ function createBuilderHullChild(hullId, type, title){
 
 
 function renderBuilderAddHullChildMenu(hullId){
-  return `
-    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-kind-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
-          <div>
-            <span>Hull object</span>
-            <strong>Add item</strong>
-          </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
-        </div>
-
-        <div class="yfd-builder-kind-grid yfd-builder-kind-grid-two">
-          <button type="button" data-builder-add-hull-child="area" data-builder-parent-hull="${hullId}">
-            <strong>Area / Zone</strong>
-            <span>Container for deeper hull structure</span>
-          </button>
-          <button type="button" data-builder-add-hull-child="equipment" data-builder-parent-hull="${hullId}">
-            <strong>Equipment</strong>
-            <span>Hull-specific object with future service records</span>
-          </button>
-        </div>
-      </section>
-    </div>
-  `;
+  return renderBuilderAddItemChoiceModal({
+    context:'Hull object',
+    inputId:'yfdBuilderHullChildName',
+    parentType:'hull',
+    parentId:hullId,
+    createAttr:'data-builder-create-hull-child',
+    equipmentPlaceholder:'Pump, valve, transducer, hull sensor',
+    areaPlaceholder:'Forward hull section, bilge area, repair zone',
+    note:'Library items use the same Main Equipment Base as ready-made yacht mode.'
+  });
 }
 
 function openBuilderAddHullChildMenu(hullId){
   closeBuilderModal();
   builderModalState = {
-    type:'hull_child_menu',
+    type:'hull_child',
     scope:null,
     hullId:hullId || '',
     deckId:null,
-    childType:null,
+    childType:'equipment',
     deleteTarget:null
   };
   document.body.insertAdjacentHTML('beforeend', renderBuilderAddHullChildMenu(builderModalState.hullId));
@@ -2465,20 +3218,21 @@ function renderBuilderHullScreen(hullId, push=true){
 
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${label}</h2>
-          <p>Custom builder hull / yacht structure</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
-      <div class="yfd-builder-action-spacer" aria-hidden="true"></div>
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
+      ${renderYfdContextObjectCard({
+        kind:'hull',
+        id:hullId,
+        title:label,
+        displayTitle:getYfdActiveVesselLabel(),
+        displaySubtitle:`Hull: ${label}`,
+        canEdit:false,
+        canDelete:false
+      })}
+      ${renderForwardButton()}
     </div>
 
     <div class="yfd-list yfd-builder-page-list">
@@ -2498,10 +3252,6 @@ function renderBuilderHullScreen(hullId, push=true){
         </section>
       ` : ''}
 
-      <section class="yfd-builder-page-bottom">
-        <strong>Hull structure</strong>
-        <span>This page is the working space for hull areas/zones and hull-specific equipment.</span>
-      </section>
     </div>
   `;
 
@@ -2509,19 +3259,16 @@ function renderBuilderHullScreen(hullId, push=true){
 }
 
 function renderBuilderDeckCard(deck){
+  const title = deck && deck.title ? deck.title : 'Untitled deck';
+  const id = deck && deck.id ? deck.id : '';
   return `
     <article class="yfd-builder-deck-card yfd-builder-deck-open-card yfd-builder-node-card" role="group" tabindex="0">
-      <div class="yfd-builder-node-head yfd-builder-open-zone" data-open-builder-deck="${deck.id}" role="button" tabindex="0" aria-label="Open deck">
-        <strong>${deck.title}</strong>
+      <div class="yfd-builder-node-head yfd-builder-open-zone" data-open-builder-deck="${id}" role="button" tabindex="0" aria-label="Open deck">
+        <strong>${yfdEscapeAttr(title)}</strong>
       </div>
 
-      <div class="yfd-builder-mini-actions yfd-builder-three-actions">
-        ${renderBuilderCompactLockButton(deck.id, !!deck.locked)}
-        ${renderBuilderEditButton('deck', deck.id)}
-        <button class="yfd-builder-mini-action yfd-builder-danger-icon" data-delete-builder-deck="${deck.id}" type="button" title="Delete" aria-label="Delete deck">🗑</button>
-      </div>
-
-      <div class="yfd-builder-items-footer">${getBuilderDeckChildCount(deck)} items</div>
+      ${renderYfdObjectActionMenu({kind:'deck', id, title, editType:'deck', deleteType:'deck'})}
+      ${renderYfdTaskBoard('deck', id, title)}
     </article>
   `;
 }
@@ -2551,22 +3298,23 @@ function renderBuilderDeleteDeckModal(deckId){
 
   return `
     <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
+      <section class="yfd-builder-modal yfd-action-modal yfd-ready-delete-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
+        <div class="yfd-action-head">
           <div>
             <span>Delete deck</span>
             <strong>${title}</strong>
           </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">&times;</button>
         </div>
 
-        <div class="yfd-builder-modal-note yfd-builder-delete-note">
-          This will remove this custom deck from the builder model. Service cards in the future main RevoYacht system are not handled here.
+        <div class="yfd-service-hook">
+          <p>This removes only the user-created deck from this yacht structure.</p>
+          <p>Future service/cardholder history must not be deleted automatically.</p>
         </div>
 
-        <div class="yfd-builder-modal-actions">
+        <div class="yfd-builder-modal-actions yfd-ready-delete-actions">
           <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
-          <button class="yfd-danger-action" data-confirm-delete-builder-deck type="button">Delete deck</button>
+          <button class="yfd-danger-action" data-confirm-delete-builder-deck type="button">Delete item</button>
         </div>
       </section>
     </div>
@@ -2667,20 +3415,21 @@ function renderBuilderDeleteItemModal(itemId, itemType){
 
   return `
     <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
+      <section class="yfd-builder-modal yfd-action-modal yfd-ready-delete-modal yfd-builder-delete-modal" role="dialog" aria-modal="true">
+        <div class="yfd-action-head">
           <div>
             <span>Delete ${label}</span>
             <strong>${title}</strong>
           </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">&times;</button>
         </div>
 
-        <div class="yfd-builder-modal-note yfd-builder-delete-note">
-          This removes the item from the custom builder structure. Future service/cardholder history must not be deleted automatically.
+        <div class="yfd-service-hook">
+          <p>This removes only the user-created item from this yacht structure.</p>
+          <p>Future service/cardholder history must not be deleted automatically.</p>
         </div>
 
-        <div class="yfd-builder-modal-actions">
+        <div class="yfd-builder-modal-actions yfd-ready-delete-actions">
           <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
           <button class="yfd-danger-action" data-confirm-delete-builder-item type="button">Delete item</button>
         </div>
@@ -2755,16 +3504,23 @@ function renderBuilderDeckItemCard(item){
   const title = item.title || 'Untitled item';
   const isEquipment = type === 'equipment';
   const badge = isEquipment ? 'Equipment' : 'Area / Zone';
-  const meta = isEquipment ? 'Instances' : 'Open';
+  const id = item.id || '';
   const openAttr = isEquipment
-    ? `data-open-builder-equipment="${item.id}"`
-    : `data-open-builder-area="${item.id}"`;
+    ? `data-open-builder-equipment="${id}"`
+    : `data-open-builder-area="${id}"`;
 
   return `
     <article class="yfd-builder-v2-item-card yfd-builder-v2-item-${isEquipment ? 'equipment' : 'area'}" ${openAttr} role="button" tabindex="0" aria-label="Open item">
-      <strong>${title}</strong>
+      <strong>${yfdEscapeAttr(title)}</strong>
       <span>${badge}</span>
-      <em>${meta}</em>
+      ${renderYfdObjectActionMenu({
+        kind:isEquipment ? 'equipment' : 'area',
+        id,
+        title,
+        editType:isEquipment ? 'equipment' : 'area',
+        deleteType:isEquipment ? 'equipment' : 'area'
+      })}
+      ${renderYfdTaskBoard(isEquipment ? 'equipment' : 'area', id, title)}
     </article>
   `;
 }
@@ -2817,8 +3573,19 @@ function createBuilderAreaChild(areaId, type, title){
 
 
 /* === V40-D3D-4E Builder library uses ready modal standard 20260507 === */
-function renderBuilderAreaLibraryModal(areaId){
-  const groups = getReadyLibraryGroups();
+function getBuilderLibraryTargetLabel(targetType){
+  if(targetType === 'deck') return 'Deck';
+  if(targetType === 'hull') return 'Hull';
+  if(targetType === 'sailing_root') return 'Sailing rig section';
+  return 'Area / Zone';
+}
+
+function renderBuilderAreaLibraryModal(areaId, targetType='area'){
+  const safeTargetType = targetType === 'deck' ? 'deck' : targetType === 'hull' ? 'hull' : targetType === 'sailing_root' ? 'sailing_root' : 'area';
+  const groups = getBuilderLibraryGroupsForTarget(safeTargetType, areaId);
+  const emptyText = safeTargetType === 'sailing_root'
+    ? 'No sailing rig equipment is configured for this section.'
+    : 'No Main Equipment Base items are configured yet.';
 
   return `
     <div class="yfd-builder-modal-backdrop yfd-builder-library-backdrop" data-builder-modal-backdrop>
@@ -2826,13 +3593,13 @@ function renderBuilderAreaLibraryModal(areaId){
         <div class="yfd-ready-library-head">
           <div>
             <span>Builder library</span>
-            <strong>Add equipment</strong>
+            <strong>Add equipment to ${getBuilderLibraryTargetLabel(safeTargetType)}</strong>
           </div>
           <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
         </div>
 
         <div class="yfd-ready-library-scroll">
-          ${groups.map(group => {
+          ${groups.length ? groups.map(group => {
             const groupTitle = yfdEscapeAttr(group.title || 'Equipment');
             return `
               <section class="yfd-ready-library-section">
@@ -2843,7 +3610,7 @@ function renderBuilderAreaLibraryModal(areaId){
                     const itemTitle = yfdEscapeAttr(item.title || 'Equipment');
                     const itemCategory = yfdEscapeAttr(item.category || group.title || 'Equipment');
                     return `
-                    <button class="yfd-ready-library-item yfd-builder-library-item" data-builder-library-select="${itemId}" data-builder-library-area="${yfdEscapeAttr(areaId)}" type="button">
+                    <button class="yfd-ready-library-item yfd-builder-library-item" data-builder-library-select="${itemId}" data-builder-library-area="${yfdEscapeAttr(areaId)}" data-builder-library-target-type="${safeTargetType}" data-builder-library-target-id="${yfdEscapeAttr(areaId)}" type="button">
                       <strong>${itemTitle}</strong>
                       <span>${itemCategory}</span>
                     </button>
@@ -2852,34 +3619,54 @@ function renderBuilderAreaLibraryModal(areaId){
                 </div>
               </section>
             `;
-          }).join('')}
+          }).join('') : `<p class="yfd-builder-modal-note">${emptyText}</p>`}
         </div>
 
         <div class="yfd-ready-library-actions yfd-builder-library-actions">
           <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
-          <button class="yfd-primary-action is-disabled" data-builder-library-add-selected data-builder-library-area="${yfdEscapeAttr(areaId)}" type="button" disabled>Add selected</button>
+          <button class="yfd-primary-action is-disabled" data-builder-library-add-selected data-builder-library-area="${yfdEscapeAttr(areaId)}" data-builder-library-target-type="${safeTargetType}" data-builder-library-target-id="${yfdEscapeAttr(areaId)}" type="button" disabled>Add selected</button>
         </div>
       </section>
     </div>
   `;
 }
 
-function openBuilderAreaLibraryModal(areaId){
-  if(isBuilderLocked(areaId)){
-    openBuilderLockedNotice('Area / Zone is locked');
+function openBuilderEquipmentLibraryModal(targetType, targetId){
+  const safeTargetType = targetType === 'deck' ? 'deck' : targetType === 'hull' ? 'hull' : targetType === 'sailing_root' ? 'sailing_root' : 'area';
+  if(!targetId) return;
+
+  if(safeTargetType !== 'sailing_root' && isBuilderLocked(targetId)){
+    openBuilderLockedNotice(getBuilderLibraryTargetLabel(safeTargetType) + ' is locked');
     return;
   }
+  if(safeTargetType === 'sailing_root' && !getSailingBuilderRoot(targetId)) return;
+
   closeBuilderModal();
   builderModalState = {
-    type:'area_library',
+    type:'equipment_library',
     scope:null,
-    hullId:null,
-    deckId:null,
+    hullId:safeTargetType === 'hull' ? targetId : null,
+    deckId:safeTargetType === 'deck' ? targetId : null,
     childType:null,
     deleteTarget:null,
-    areaId:areaId || ''
+    areaId:safeTargetType === 'area' ? targetId : null,
+    rootId:safeTargetType === 'sailing_root' ? targetId : null,
+    libraryTargetType:safeTargetType,
+    libraryTargetId:targetId || ''
   };
-  document.body.insertAdjacentHTML('beforeend', renderBuilderAreaLibraryModal(areaId));
+  document.body.insertAdjacentHTML('beforeend', renderBuilderAreaLibraryModal(targetId, safeTargetType));
+}
+
+function openBuilderAreaLibraryModal(areaId){
+  openBuilderEquipmentLibraryModal('area', areaId);
+}
+
+function openBuilderDeckLibraryModal(deckId){
+  openBuilderEquipmentLibraryModal('deck', deckId);
+}
+
+function openBuilderHullLibraryModal(hullId){
+  openBuilderEquipmentLibraryModal('hull', hullId);
 }
 
 function selectBuilderAreaLibraryItem(btn){
@@ -2897,45 +3684,23 @@ function selectBuilderAreaLibraryItem(btn){
     addBtn.classList.remove('is-disabled');
     addBtn.dataset.builderLibrarySelected = btn.dataset.builderLibrarySelect || '';
     addBtn.dataset.builderLibraryArea = btn.dataset.builderLibraryArea || builderModalState.areaId || '';
+    addBtn.dataset.builderLibraryTargetType = btn.dataset.builderLibraryTargetType || builderModalState.libraryTargetType || 'area';
+    addBtn.dataset.builderLibraryTargetId = btn.dataset.builderLibraryTargetId || builderModalState.libraryTargetId || builderModalState.areaId || '';
   }
 }
 
 
 function renderBuilderAddAreaChildMenu(areaId){
-  return `
-    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-kind-modal yfd-action-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
-          <div>
-            <span>Area / Zone</span>
-            <strong>Add item</strong>
-          </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
-        </div>
-
-        <div class="yfd-add-item-segments" role="group" aria-label="Add item type">
-          <button class="yfd-choice" type="button" data-builder-add-area-child="area" data-builder-parent-area="${areaId}">
-            <strong>Area / Zone</strong>
-            <span>Container for deeper yacht structure.</span>
-          </button>
-
-          <button class="yfd-choice" type="button" data-builder-add-area-child="equipment" data-builder-parent-area="${areaId}">
-            <strong>Manual equipment</strong>
-            <span>Create custom equipment by name.</span>
-          </button>
-
-          <button class="yfd-choice" type="button" data-builder-area-library="${areaId}">
-            <strong>From library</strong>
-            <span>Attach equipment from the current equipment base.</span>
-          </button>
-        </div>
-
-        <div class="yfd-builder-modal-note">
-          Library items use the current equipment base. Area / Zone creates another structural container.
-        </div>
-      </section>
-    </div>
-  `;
+  return renderBuilderAddItemChoiceModal({
+    context:'Area / Zone',
+    inputId:'yfdBuilderAreaChildName',
+    parentType:'area',
+    parentId:areaId,
+    createAttr:'data-builder-create-area-child',
+    equipmentPlaceholder:'Pump, Bar, Diving Station',
+    areaPlaceholder:'Cockpit, aft section, technical space',
+    note:'Library items use the current equipment base. Area / Zone creates another structural container.'
+  });
 }
 
 function openBuilderAddAreaChildMenu(areaId){
@@ -2944,7 +3709,7 @@ function openBuilderAddAreaChildMenu(areaId){
     return;
   }
   closeBuilderModal();
-  builderModalState = {type:'area_child_menu', scope:null, hullId:null, deckId:null, childType:null, deleteTarget:null, areaId:areaId || ''};
+  builderModalState = {type:'area_child', scope:null, hullId:null, deckId:null, childType:'equipment', deleteTarget:null, areaId:areaId || ''};
   document.body.insertAdjacentHTML('beforeend', renderBuilderAddAreaChildMenu(builderModalState.areaId));
 }
 
@@ -3021,20 +3786,13 @@ function renderBuilderAreaScreen(areaId, push=true){
 
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${area.title}</h2>
-          <p>Area / zone structure</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
       ${renderBuilderScreenControls('area', area.id, !!area.locked)}
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+      ${renderForwardButton()}
     </div>
 
     <div class="yfd-list yfd-builder-page-list">
@@ -3061,10 +3819,6 @@ function renderBuilderAreaScreen(areaId, push=true){
         </section>
       ` : ''}
 
-      <section class="yfd-builder-page-bottom">
-        <strong>Area / Zone</strong>
-        <span>Structural container layer for deeper yacht hierarchy.</span>
-      </section>
     </div>
   `;
 
@@ -3093,20 +3847,13 @@ function renderBuilderDeckScreen(deckId, push=true){
 
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${deck.title}</h2>
-          <p>Custom builder deck / yacht structure</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
       ${renderBuilderScreenControls('deck', deck.id, !!deck.locked)}
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+      ${renderForwardButton()}
     </div>
 
     <div class="yfd-list yfd-builder-page-list">
@@ -3126,10 +3873,6 @@ function renderBuilderDeckScreen(deckId, push=true){
         </section>
       ` : ''}
 
-      <section class="yfd-builder-page-bottom">
-        <strong>Deck structure</strong>
-        <span>This page is the working space for custom areas/zones and equipment.</span>
-      </section>
     </div>
   `;
 
@@ -3137,30 +3880,16 @@ function renderBuilderDeckScreen(deckId, push=true){
 }
 
 function renderBuilderAddChildMenu(deckId){
-  return `
-    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
-      <section class="yfd-builder-modal yfd-builder-kind-modal" role="dialog" aria-modal="true">
-        <div class="yfd-builder-modal-head">
-          <div>
-            <span>Custom builder</span>
-            <strong>Add item</strong>
-          </div>
-          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
-        </div>
-
-        <div class="yfd-builder-kind-grid yfd-builder-kind-grid-two">
-          <button type="button" data-builder-add-child="area" data-builder-parent-deck="${deckId}">
-            <strong>Area / Zone</strong>
-            <span>Container for deeper yacht structure</span>
-          </button>
-          <button type="button" data-builder-add-child="equipment" data-builder-parent-deck="${deckId}">
-            <strong>Equipment</strong>
-            <span>Object with instances and future service records</span>
-          </button>
-        </div>
-      </section>
-    </div>
-  `;
+  return renderBuilderAddItemChoiceModal({
+    context:'Custom module',
+    inputId:'yfdBuilderChildName',
+    parentType:'deck',
+    parentId:deckId,
+    createAttr:'data-builder-create-child',
+    equipmentPlaceholder:'Pump, Bar, Diving Station',
+    areaPlaceholder:'Cockpit, Galley Area, Engine Room',
+    note:'Library items use the same Main Equipment Base as ready-made yacht mode.'
+  });
 }
 
 
@@ -3251,20 +3980,13 @@ function renderBuilderEquipmentScreen(equipmentId, push=true){
 
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${equipment.title}</h2>
-          <p>Builder equipment / future service connection</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
       ${renderBuilderScreenControls('equipment', equipment.id, !!equipment.locked)}
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+      ${renderForwardButton()}
     </div>
 
     <section class="yfd-instances-card">
@@ -3275,12 +3997,17 @@ function renderBuilderEquipmentScreen(equipmentId, push=true){
 
       ${equipment.instances.map(instance => `
         <div class="yfd-instance-row">
-          <strong>${instance.title}</strong>
+          <strong>${yfdEscapeAttr(instance.title)}</strong>
+          ${renderYfdTaskBoard('instance', instance.id, instance.title || 'Instance')}
           <div>
-            ${renderBuilderNoteButton('instance', instance.id)}
-            ${renderBuilderEditButton('instance', instance.id)}
-            <button class="yfd-builder-delete-btn" data-delete-builder-instance="${instance.id}" type="button">Delete</button>
             <button class="yfd-service-link" type="button">Open service</button>
+            ${renderYfdObjectActionMenu({
+              kind:'instance',
+              id:instance.id,
+              title:instance.title || 'Instance',
+              editType:'instance',
+              deleteType:'instance'
+            })}
           </div>
         </div>
       `).join('')}
@@ -3298,7 +4025,7 @@ function openBuilderAddChildMenu(deckId){
     return;
   }
   closeBuilderModal();
-  builderModalState = {type:'child_menu', scope:null, hullId:null, deckId:deckId || '', childType:null};
+  builderModalState = {type:'child', scope:null, hullId:null, deckId:deckId || '', childType:'equipment'};
   document.body.insertAdjacentHTML('beforeend', renderBuilderAddChildMenu(builderModalState.deckId));
 }
 
@@ -3333,57 +4060,142 @@ function getSailingBuilderPrefix(){
   return 'S/Y ' + name;
 }
 
+function getActiveSailingRigId(){
+  const yacht = getActiveYacht && getActiveYacht();
+  return yacht && yacht.rig ? yacht.rig : 'bermudan_sloop';
+}
+
+function getSailingRigTitle(rigId){
+  const titles = {
+    bermudan_sloop:'Bermudan sloop',
+    ketch:'Ketch',
+    schooner:'Schooner'
+  };
+  return titles[rigId || 'bermudan_sloop'] || 'Sailing rig';
+}
+
+function getSailingBuilderRootConfigs(){
+  return getSailingOperationalRoots(getActiveSailingRigId()).map(root => ({
+    id:root.id,
+    title:root.title,
+    note:root.note || getSailingRigSectionNote(root)
+  }));
+}
+
+function getDefaultSailingBuilderRootId(){
+  const first = getSailingBuilderRootConfigs()[0];
+  return first ? first.id : 'sailing_bermudan_aft_sails';
+}
+
 function renderSailingBuilderYachtCard(){
+  const rigTitle = getSailingRigTitle(getActiveSailingRigId());
   return `
     <section class="yfd-sailing-builder-yacht-card">
-      <span>Custom sailing structure</span>
+      <span>Custom sailing structure / ${rigTitle}</span>
       <strong>${getSailingBuilderPrefix()}</strong>
     </section>
   `;
 }
 
-function renderSailingBuilderRootButtons(){
-  const roots = [
-    {id:'spar', title:'Spar'},
-    {id:'rigging', title:'Rigging'},
-    {id:'sails', title:'Sails'}
-  ];
+function getSailingBuilderRigSlot(root){
+  const title = String(root && root.title || '').toUpperCase();
+  const id = String(root && root.id || '').toLowerCase();
+
+  if(title.indexOf('AFT SAIL') >= 0 || id.indexOf('aft_sail') >= 0) return 'left';
+  if(title.indexOf('MAST SAIL') >= 0 || id.indexOf('mast_sail') >= 0) return 'left';
+  if(title.indexOf('FORWARD SAIL') >= 0 || id.indexOf('forward_sail') >= 0) return 'right';
+  if(title.indexOf('STAY') >= 0 || id.indexOf('stay') >= 0) return 'right';
+  if(title.indexOf('TOP') >= 0 || id.indexOf('_top') >= 0) return 'top';
+  if(title.indexOf('SPAR') >= 0 || id.indexOf('_spar') >= 0) return 'spar';
+  if(title.indexOf('RIGS') >= 0 || title.indexOf('RIGGING') >= 0 || id.indexOf('_rig') >= 0) return 'rigs';
+
+  return 'extra';
+}
+
+function renderSailingRigDiagramButton(root, slot){
+  if(!root) return '';
 
   return `
-    <section class="yfd-sailing-builder-roots" aria-label="Sailing root structure">
-      ${roots.map(root => `
-        <button class="yfd-sailing-builder-root-btn" data-sailing-builder-root="${root.id}" type="button">
-          ${root.title}
-        </button>
-      `).join('')}
+    <button class="yfd-sailing-builder-root-btn yfd-sailing-rig-card yfd-sailing-rig-card-${slot}" data-sailing-builder-root="${yfdEscapeAttr(root.id)}" data-sailing-rig-slot="${slot}" type="button">
+      <span>${yfdEscapeAttr(root.title)}</span>
+    </button>
+  `;
+}
+
+function renderSailingBuilderRootButtons(){
+  const roots = getSailingBuilderRootConfigs();
+  const slots = roots.reduce((acc, root) => {
+    const slot = getSailingBuilderRigSlot(root);
+    if(!acc[slot]) acc[slot] = [];
+    acc[slot].push(root);
+    return acc;
+  }, {});
+  const rigId = getActiveSailingRigId();
+  const sideLabel = rigId === 'bermudan_sloop' ? 'Bermudan sloop rig' : 'Multi-mast sailing rig';
+  const extraRoots = slots.extra || [];
+
+  return `
+    <section class="yfd-sailing-rig-diagram yfd-sailing-rig-diagram-${yfdEscapeAttr(rigId)}" aria-label="${sideLabel}">
+      <div class="yfd-sailing-rig-side yfd-sailing-rig-side-left">
+        ${(slots.left || []).map(root => renderSailingRigDiagramButton(root, 'side')).join('')}
+      </div>
+
+      <div class="yfd-sailing-rig-center">
+        ${(slots.top || []).map(root => renderSailingRigDiagramButton(root, 'top')).join('')}
+        ${(slots.spar || []).map(root => renderSailingRigDiagramButton(root, 'spar')).join('')}
+        ${(slots.rigs || []).map(root => renderSailingRigDiagramButton(root, 'rigs')).join('')}
+      </div>
+
+      <div class="yfd-sailing-rig-side yfd-sailing-rig-side-right">
+        ${(slots.right || []).map(root => renderSailingRigDiagramButton(root, 'side')).join('')}
+      </div>
     </section>
 
-    <section class="yfd-sailing-hull-divider">
-      <span></span>
-      <strong>Hull / Deck structure</strong>
-      <span></span>
-    </section>
+    ${extraRoots.length ? `
+      <section class="yfd-sailing-rig-extra">
+        ${extraRoots.map(root => renderSailingRigDiagramButton(root, 'extra')).join('')}
+      </section>
+    ` : ''}
   `;
 }
 
 function getSailingBuilderRootTitle(rootId){
-  const map = {
-    sailing_top:'Top',
-    spar:'Spar',
-    rigging:'Rigging',
-    sails:'Sails'
+  const root = getSailingBuilderRootConfigs().find(item => item.id === rootId);
+  if(root) return root.title;
+
+  const legacyMap = {
+    sailing_top:'TOP',
+    spar:'SPAR',
+    rigging:'RIGS',
+    sails:'SAILS'
   };
-  return map[rootId] || 'Sailing section';
+  return legacyMap[rootId] || 'Sailing section';
 }
 
 function getSailingBuilderRootNote(rootId){
-  const map = {
-    sailing_top:'Masthead and upper sailing equipment: antennas, wind instruments, lights and sensors.',
-    spar:'Mast, boom, bowsprit, spreaders and spar fittings.',
-    rigging:'Standing and running rigging: stays, shrouds, halyards, sheets and controls.',
-    sails:'Sail inventory and sail-related equipment.'
-  };
-  return map[rootId] || 'Custom sailing builder section.';
+  const root = getSailingBuilderRootConfigs().find(item => item.id === rootId);
+  if(root && root.note) return root.note;
+  return 'Custom sailing builder section.';
+}
+
+function getLegacySailingBuilderRootId(rootId){
+  const id = String(rootId || '');
+  if(id.indexOf('_top') >= 0) return 'sailing_top';
+  if(id.indexOf('_spar') >= 0) return 'spar';
+  if(id.indexOf('_rig') >= 0) return 'rigging';
+  if(id.indexOf('_sail') >= 0) return 'sails';
+  return '';
+}
+
+function resolveSailingBuilderRootId(rootId){
+  const configs = getSailingBuilderRootConfigs();
+  const requested = String(rootId || '');
+  if(configs.some(config => config.id === requested)) return requested;
+
+  const migrated = configs.find(config => getLegacySailingBuilderRootId(config.id) === requested);
+  if(migrated) return migrated.id;
+
+  return configs[0] ? configs[0].id : getDefaultSailingBuilderRootId();
 }
 
 function ensureSailingBuilderRoots(){
@@ -3395,17 +4207,25 @@ function ensureSailingBuilderRoots(){
     state.builder.sailingRoots = {};
   }
 
-  ['sailing_top','spar','rigging','sails'].forEach(id => {
+  getSailingBuilderRootConfigs().forEach(config => {
+    const id = config.id;
+    const legacyId = getLegacySailingBuilderRootId(id);
+    if(!state.builder.sailingRoots[id] && legacyId && state.builder.sailingRoots[legacyId]){
+      state.builder.sailingRoots[id] = state.builder.sailingRoots[legacyId];
+      state.builder.sailingRoots[id].id = id;
+    }
+
     if(!state.builder.sailingRoots[id] || typeof state.builder.sailingRoots[id] !== 'object'){
       state.builder.sailingRoots[id] = {
         id,
-        title:getSailingBuilderRootTitle(id),
+        title:config.title,
         locked:false,
         items:[]
       };
     }
 
-    state.builder.sailingRoots[id].title = getSailingBuilderRootTitle(id);
+    state.builder.sailingRoots[id].title = config.title;
+    state.builder.sailingRoots[id].note = config.note || state.builder.sailingRoots[id].note || '';
 
     if(typeof state.builder.sailingRoots[id].locked !== 'boolean'){
       state.builder.sailingRoots[id].locked = false;
@@ -3421,7 +4241,8 @@ function ensureSailingBuilderRoots(){
 
 function getSailingBuilderRoot(rootId){
   const roots = ensureSailingBuilderRoots();
-  return roots[rootId] || roots.sailing_top;
+  const id = resolveSailingBuilderRootId(rootId);
+  return roots[id] || null;
 }
 
 function findSailingRootItem(itemId){
@@ -3444,11 +4265,447 @@ function yfdEscapeAttr(value){
     .replace(/>/g, '&gt;');
 }
 
+function getYfdActiveVesselLabel(){
+  const yacht = getActiveYacht && getActiveYacht();
+  const name = (yacht && yacht.name) || (state.builder && state.builder.modelName) || 'Custom Yacht';
+  const vesselType = (yacht && (yacht.vesselType || yacht.type)) || '';
+  const prefix = vesselType === 'sailing' ? 'S/Y' : 'M/Y';
+  const registration = yacht && yacht.meta && yacht.meta.registration
+    ? String(yacht.meta.registration).trim()
+    : yacht && yacht.registration
+      ? String(yacht.registration).trim()
+      : '';
+  return registration ? `${name} ${prefix} ${registration}` : `${name} ${prefix}`;
+}
+
+function getYfdBuilderHeaderCard(){
+  return `
+    <div class="yfd-module-card yfd-header-card">
+      ${renderLogo()}
+      <div>
+        <h2 class="yfd-module-title">REVOYACHT</h2>
+        <p>Operational yacht structure builder for decks, zones and onboard equipment.</p>
+      </div>
+    </div>
+  `;
+}
+
+function getYfdTaskKey(kind, id){
+  return `${kind || 'object'}:${id || 'unknown'}`;
+}
+
+function getYfdObjectTasks(kind, id){
+  if(!state.tasks || typeof state.tasks !== 'object') state.tasks = {};
+  const key = getYfdTaskKey(kind, id);
+  if(!Array.isArray(state.tasks[key])) state.tasks[key] = [];
+  return state.tasks[key];
+}
+
+function getYfdTaskCounts(kind, id){
+  const counts = {todo:0, progress:0, done:0};
+  getYfdObjectTasks(kind, id).forEach(task => {
+    if(task && task.status === 'done'){
+      counts.done += 1;
+    } else if(task && task.status === 'progress'){
+      counts.progress += 1;
+    } else {
+      counts.todo += 1;
+    }
+  });
+  return counts;
+}
+
+function renderYfdTaskBoard(kind, id, title='Object'){
+  const counts = getYfdTaskCounts(kind, id);
+  const active = counts.todo + counts.progress;
+  return `
+    <button class="yfd-task-button" data-yfd-open-task-list data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" data-yfd-title="${yfdEscapeAttr(title || 'Object')}" type="button" aria-label="Tasks: ${active} active, ${counts.done} done">
+      <span>Tasks</span> <b>${active}</b>
+    </button>
+  `;
+}
+
+function renderYfdObjectActionMenu(opts){
+  const o = opts || {};
+  const kind = yfdEscapeAttr(o.kind || 'object');
+  const id = yfdEscapeAttr(o.id || '');
+  const title = yfdEscapeAttr(o.title || 'Object');
+  const editType = yfdEscapeAttr(o.editType || o.kind || 'object');
+  const deleteType = yfdEscapeAttr(o.deleteType || o.kind || 'object');
+  const editDisabled = o.canEdit === false ? ' disabled aria-disabled="true"' : '';
+  const deleteDisabled = o.canDelete === false ? ' disabled aria-disabled="true"' : '';
+
+  return `
+    <details class="yfd-object-menu" data-yfd-object-menu>
+      <summary aria-label="Object menu"><span aria-hidden="true">...</span></summary>
+      <div class="yfd-object-menu-panel" role="menu">
+        <button type="button" role="menuitem" data-yfd-card-action="edit" data-yfd-kind="${kind}" data-yfd-id="${id}" data-yfd-title="${title}" data-yfd-edit-type="${editType}"${editDisabled}>Edit</button>
+        <button type="button" role="menuitem" data-yfd-card-action="delete" data-yfd-kind="${kind}" data-yfd-id="${id}" data-yfd-title="${title}" data-yfd-delete-type="${deleteType}"${deleteDisabled}>Delete</button>
+        <button type="button" role="menuitem" data-yfd-card-action="tasks" data-yfd-kind="${kind}" data-yfd-id="${id}" data-yfd-title="${title}">Tasks</button>
+        <button type="button" role="menuitem" data-yfd-card-action="view-tasks" data-yfd-kind="${kind}" data-yfd-id="${id}" data-yfd-title="${title}">View tasks</button>
+      </div>
+    </details>
+  `;
+}
+
+function renderYfdContextObjectCard(opts){
+  const o = opts || {};
+  const kind = o.kind || 'object';
+  const id = o.id || '';
+  const title = o.title || 'Object';
+  const subtitle = o.subtitle || getYfdActiveVesselLabel();
+  const displayTitle = o.displayTitle || title;
+  const displaySubtitle = o.displaySubtitle || subtitle;
+
+  return `
+    <div class="yfd-context-object-card">
+      <div class="yfd-context-object-copy">
+        <strong>${yfdEscapeAttr(displayTitle)}</strong>
+        <span>${yfdEscapeAttr(displaySubtitle)}</span>
+      </div>
+      ${renderYfdTaskBoard(kind, id, title)}
+      ${renderYfdObjectActionMenu(o)}
+    </div>
+  `;
+}
+
+function openYfdObjectGalleryStub(kind, id, title){
+  closeBuilderModal();
+  closeActionModal();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="yfd-action-backdrop" data-action-backdrop>
+      <section class="yfd-action-modal">
+        <div class="yfd-action-head">
+          <div>
+            <span>Object gallery</span>
+            <strong>${yfdEscapeAttr(title || 'Object')}</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-action type="button">×</button>
+        </div>
+        <div class="yfd-service-hook">
+          <p>This gallery belongs to the selected object.</p>
+          <code>${yfdEscapeAttr(kind)}:${yfdEscapeAttr(id)}</code>
+          <p>Future: upload, edit, delete and report photos for this exact object.</p>
+        </div>
+      </section>
+    </div>
+  `);
+}
+
+function renderYfdTaskModal(kind, id, title){
+  return `
+    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
+      <section class="yfd-builder-modal yfd-task-modal" role="dialog" aria-modal="true">
+        <div class="yfd-builder-modal-head">
+          <div>
+            <span>Task</span>
+            <strong>${yfdEscapeAttr(title || 'Object')}</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+        </div>
+
+        <div class="yfd-task-object-lock">
+          <span>Object</span>
+          <strong>${yfdEscapeAttr(title || 'Object')}</strong>
+        </div>
+
+        <label class="yfd-field">
+          <span>Crew member</span>
+          <input id="yfdTaskCrew" type="text" placeholder="Engineer, steward, deckhand">
+        </label>
+
+        <label class="yfd-field">
+          <span>Task</span>
+          <textarea id="yfdTaskText" rows="4" placeholder="Describe the exact work to be completed"></textarea>
+        </label>
+
+        <div class="yfd-task-form-grid">
+          <label class="yfd-field">
+            <span>Status</span>
+            <select id="yfdTaskStatus">
+              <option value="todo">Open</option>
+              <option value="progress">In progress</option>
+              <option value="done">Done</option>
+            </select>
+          </label>
+
+          <label class="yfd-field">
+            <span>Due date</span>
+            <input id="yfdTaskDue" type="datetime-local">
+          </label>
+        </div>
+
+        <button class="yfd-secondary-action yfd-task-report-button" data-yfd-task-report data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" data-yfd-title="${yfdEscapeAttr(title || 'Object')}" type="button">View report</button>
+
+        <div class="yfd-builder-modal-actions">
+          <button class="yfd-secondary-action" data-close-builder-modal type="button">Cancel</button>
+          <button class="yfd-primary-action" data-yfd-task-save data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" type="button">Save task</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function openYfdTaskModal(kind, id, title){
+  closeBuilderModal();
+  document.body.insertAdjacentHTML('beforeend', renderYfdTaskModal(kind, id, title));
+  setTimeout(() => {
+    const input = document.getElementById('yfdTaskCrew');
+    if(input) input.focus();
+  }, 50);
+}
+
+function renderYfdTaskListModal(kind, id, title){
+  const tasks = getYfdObjectTasks(kind, id);
+  const rows = tasks.length
+    ? tasks.map(task => `
+        <div class="yfd-task-list-row is-${yfdEscapeAttr(task.status || 'todo')}">
+          <div>
+            <strong>${yfdEscapeAttr(task.text || 'Task')}</strong>
+            <span>${yfdEscapeAttr(task.crew || 'Unassigned')} · ${yfdEscapeAttr(task.due || 'No due date')}</span>
+          </div>
+          <button data-yfd-task-report data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" data-yfd-title="${yfdEscapeAttr(title || 'Object')}" type="button">Report</button>
+        </div>
+      `).join('')
+    : `<div class="yfd-builder-modal-note">No tasks for this object yet.</div>`;
+
+  return `
+    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
+      <section class="yfd-builder-modal yfd-task-modal" role="dialog" aria-modal="true">
+        <div class="yfd-builder-modal-head">
+          <div>
+            <span>Task list</span>
+            <strong>${yfdEscapeAttr(title || 'Object')}</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+        </div>
+        <div class="yfd-task-list">${rows}</div>
+        <div class="yfd-builder-modal-actions">
+          <button class="yfd-secondary-action" data-close-builder-modal type="button">Close</button>
+          <button class="yfd-primary-action" data-yfd-open-task-from-list data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" data-yfd-title="${yfdEscapeAttr(title || 'Object')}" type="button">New task</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function openYfdTaskListModal(kind, id, title){
+  closeBuilderModal();
+  document.body.insertAdjacentHTML('beforeend', renderYfdTaskListModal(kind, id, title));
+}
+
+function openYfdTaskReportModal(kind, id, title){
+  closeBuilderModal();
+  document.body.insertAdjacentHTML('beforeend', `
+    <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
+      <section class="yfd-builder-modal yfd-task-modal" role="dialog" aria-modal="true">
+        <div class="yfd-builder-modal-head">
+          <div>
+            <span>Task report</span>
+            <strong>${yfdEscapeAttr(title || 'Object')}</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-builder-modal type="button">×</button>
+        </div>
+        <div class="yfd-builder-modal-note">
+          Report workflow is reserved for the task dashboard and messenger integration.
+        </div>
+        <div class="yfd-builder-modal-actions">
+          <button class="yfd-secondary-action" data-close-builder-modal type="button">Close</button>
+          <button class="yfd-primary-action" data-yfd-open-task-from-list data-yfd-kind="${yfdEscapeAttr(kind)}" data-yfd-id="${yfdEscapeAttr(id)}" data-yfd-title="${yfdEscapeAttr(title || 'Object')}" type="button">New task</button>
+        </div>
+      </section>
+    </div>
+  `);
+}
+
+function saveYfdTask(kind, id){
+  const crew = (document.getElementById('yfdTaskCrew')?.value || '').trim();
+  const text = (document.getElementById('yfdTaskText')?.value || '').trim();
+  const status = document.getElementById('yfdTaskStatus')?.value || 'todo';
+  const due = document.getElementById('yfdTaskDue')?.value || '';
+  if(!text) return false;
+
+  getYfdObjectTasks(kind, id).push({
+    id:'task_' + Date.now(),
+    crew,
+    text,
+    status,
+    due,
+    createdAt:new Date().toISOString()
+  });
+
+  saveState();
+  closeBuilderModal();
+  refreshAfterBuilderEdit();
+  return true;
+}
+
+function handleYfdObjectMenuEvent(e){
+  const menu = e.target && e.target.closest ? e.target.closest('[data-yfd-object-menu]') : null;
+  if(!menu) return;
+
+  const action = e.target.closest('[data-yfd-card-action]');
+  if(!action){
+    const summary = e.target.closest('summary');
+    if(summary){
+      e.preventDefault();
+      const shouldOpen = !menu.open;
+      document.querySelectorAll('[data-yfd-object-menu][open]').forEach(openMenu => {
+        if(openMenu !== menu) openMenu.removeAttribute('open');
+      });
+      if(shouldOpen) menu.setAttribute('open', '');
+      else menu.removeAttribute('open');
+    } else if(menu.open){
+      menu.removeAttribute('open');
+    }
+    e.stopPropagation();
+    if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+    return;
+  }
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+  const kind = action.dataset.yfdKind || 'object';
+  const id = action.dataset.yfdId || '';
+  const title = action.dataset.yfdTitle || 'Object';
+  const op = action.dataset.yfdCardAction || '';
+  document.querySelectorAll('[data-yfd-object-menu][open]').forEach(openMenu => {
+    openMenu.removeAttribute('open');
+  });
+
+  if(op === 'edit'){
+    if(kind === 'sailing_item') openSailingRootEditModal(id);
+    else openBuilderEditModal(action.dataset.yfdEditType || kind, id);
+    return;
+  }
+
+  if(op === 'delete'){
+    if(kind === 'deck') openBuilderDeleteDeckModal(id);
+    else if(kind === 'instance') openBuilderDeleteInstanceModal(id);
+    else if(kind === 'sailing_item') openSailingRootDeleteModal(id);
+    else openBuilderDeleteItemModal(id, action.dataset.yfdDeleteType || kind);
+    return;
+  }
+
+  if(op === 'tasks'){
+    openYfdTaskModal(kind, id, title);
+    return;
+  }
+
+  if(op === 'view-tasks'){
+    openYfdTaskListModal(kind, id, title);
+  }
+}
+
+function closeYfdObjectMenus(exceptMenu){
+  document.querySelectorAll('[data-yfd-object-menu][open]').forEach(openMenu => {
+    if(exceptMenu && openMenu === exceptMenu) return;
+    openMenu.removeAttribute('open');
+  });
+}
+
+let yfdObjectMenuOutsideBlockUntil = 0;
+
+function hasOpenYfdObjectMenus(){
+  return !!document.querySelector('[data-yfd-object-menu][open]');
+}
+
+function blockYfdObjectMenuOutsideEvent(e){
+  if(e && e.preventDefault) e.preventDefault();
+  if(e && e.stopPropagation) e.stopPropagation();
+  if(e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+}
+
+function markYfdObjectMenuOutsideBlock(){
+  yfdObjectMenuOutsideBlockUntil = Date.now() + 520;
+}
+
+function handleYfdObjectMenuPointerGuard(e){
+  const menu = e.target && e.target.closest ? e.target.closest('[data-yfd-object-menu]') : null;
+  if(menu){
+    e.stopPropagation();
+    return;
+  }
+
+  if(!hasOpenYfdObjectMenus()) return;
+
+  closeYfdObjectMenus();
+  markYfdObjectMenuOutsideBlock();
+  blockYfdObjectMenuOutsideEvent(e);
+}
+
+function handleYfdObjectMenuOutsideActivationGuard(e){
+  const menu = e.target && e.target.closest ? e.target.closest('[data-yfd-object-menu]') : null;
+  if(menu) return;
+
+  const shouldBlock = hasOpenYfdObjectMenus() || Date.now() < yfdObjectMenuOutsideBlockUntil;
+  if(!shouldBlock) return;
+
+  closeYfdObjectMenus();
+  markYfdObjectMenuOutsideBlock();
+  blockYfdObjectMenuOutsideEvent(e);
+}
+
+function handleYfdTaskModalEvent(e){
+  const saveBtn = e.target && e.target.closest ? e.target.closest('[data-yfd-task-save]') : null;
+  const reportBtn = e.target && e.target.closest ? e.target.closest('[data-yfd-task-report]') : null;
+  const newTaskBtn = e.target && e.target.closest ? e.target.closest('[data-yfd-open-task-from-list]') : null;
+  if(!saveBtn && !reportBtn && !newTaskBtn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+  const btn = saveBtn || reportBtn || newTaskBtn;
+  const kind = btn.dataset.yfdKind || 'object';
+  const id = btn.dataset.yfdId || '';
+  const title = btn.dataset.yfdTitle || 'Object';
+
+  if(saveBtn){
+    saveYfdTask(kind, id);
+    return;
+  }
+
+  if(reportBtn){
+    openYfdTaskReportModal(kind, id, title);
+    return;
+  }
+
+  openYfdTaskModal(kind, id, title);
+}
+
+function handleYfdTaskButtonEvent(e){
+  const taskBtn = e.target && e.target.closest ? e.target.closest('[data-yfd-open-task-list]') : null;
+  if(!taskBtn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+  openYfdTaskListModal(
+    taskBtn.dataset.yfdKind || 'object',
+    taskBtn.dataset.yfdId || '',
+    taskBtn.dataset.yfdTitle || 'Object'
+  );
+}
+
+document.addEventListener('click', handleYfdObjectMenuEvent, true);
+document.addEventListener('touchend', handleYfdObjectMenuEvent, true);
+document.addEventListener('pointerdown', handleYfdObjectMenuPointerGuard, true);
+document.addEventListener('touchstart', handleYfdObjectMenuPointerGuard, true);
+document.addEventListener('click', handleYfdObjectMenuOutsideActivationGuard, true);
+document.addEventListener('touchend', handleYfdObjectMenuOutsideActivationGuard, true);
+document.addEventListener('click', handleYfdTaskButtonEvent, true);
+document.addEventListener('click', handleYfdTaskModalEvent, true);
+
 function renderSailingRootItemCard(item){
   const type = item.type || 'area';
   const title = item.title || 'Untitled item';
   const note = item.note || (type === 'equipment' ? 'Equipment with instances and future service records' : 'Area / Zone');
   const badge = type === 'equipment' ? 'Ready' : 'Open';
+  const id = item.id || '';
 
   return `
     <article class="yfd-item-card yfd-builder-tree-item yfd-builder-node-card yfd-sailing-root-item-card" role="group" tabindex="0">
@@ -3457,23 +4714,30 @@ function renderSailingRootItemCard(item){
         <b>${badge}</b>
       </div>
 
-      <div class="yfd-builder-node-head yfd-builder-open-zone" data-open-sailing-root-item="${item.id}" role="button" tabindex="0" aria-label="Open item">
-        <strong>${title}</strong>
-        <small>${note}</small>
+      <div class="yfd-builder-node-head yfd-builder-open-zone" data-open-sailing-root-item="${id}" role="button" tabindex="0" aria-label="Open item">
+        <strong>${yfdEscapeAttr(title)}</strong>
+        <small>${yfdEscapeAttr(note)}</small>
       </div>
 
-      <div class="yfd-builder-mini-actions yfd-builder-three-actions">
-        <button class="yfd-builder-delete-btn yfd-builder-edit-btn yfd-builder-icon-btn" data-sailing-root-edit="${item.id}" type="button" title="Edit" aria-label="Edit">✎</button>
-        <button class="yfd-builder-mini-action yfd-builder-danger-icon" data-sailing-root-delete="${item.id}" type="button" title="Delete" aria-label="Delete">🗑</button>
-      </div>
-
-      <div class="yfd-builder-items-footer">${type === 'equipment' ? ((item.instances || []).length + ' instances') : 'Area / Zone'}</div>
+      ${renderYfdObjectActionMenu({kind:'sailing_item', id, title, editType:'sailing_item', deleteType:'sailing_item'})}
+      ${renderYfdTaskBoard('sailing_item', id, title)}
     </article>
   `;
 }
 
 function renderSailingRootAddMenu(rootId){
   const title = getSailingBuilderRootTitle(rootId);
+
+  return renderBuilderAddItemChoiceModal({
+    context:title,
+    inputId:'yfdSailingRootItemTitle',
+    parentType:'sailing_root',
+    parentId:rootId,
+    createAttr:'data-sailing-root-create-item',
+    equipmentPlaceholder:'Masthead light, mainsail, halyard, spreader',
+    areaPlaceholder:'Mast section, sail locker, rigging zone',
+    note:'Library items are filtered from Sailing Rig Base for the selected yacht rig and this exact section.'
+  });
 
   return `
     <div class="yfd-builder-modal-backdrop" data-builder-modal-backdrop>
@@ -3503,8 +4767,12 @@ function renderSailingRootAddMenu(rootId){
 
 function openSailingRootAddMenu(rootId){
   closeBuilderModal();
-  builderModalState = {type:'sailing_root_add_menu', rootId:rootId || 'sailing_top', childType:null, targetId:null};
+  builderModalState = {type:'sailing_root_create_item', rootId:rootId || getDefaultSailingBuilderRootId(), childType:'equipment', targetId:null};
   document.body.insertAdjacentHTML('beforeend', renderSailingRootAddMenu(builderModalState.rootId));
+  setTimeout(() => {
+    const input = document.getElementById('yfdSailingRootItemTitle');
+    if(input) input.focus();
+  }, 30);
 }
 
 function renderSailingRootCreateItemModal(rootId, itemType){
@@ -3543,7 +4811,7 @@ function renderSailingRootCreateItemModal(rootId, itemType){
 
 function openSailingRootCreateItemModal(rootId, itemType){
   closeBuilderModal();
-  builderModalState = {type:'sailing_root_create_item', rootId:rootId || 'sailing_top', childType:itemType || 'area', targetId:null};
+  builderModalState = {type:'sailing_root_create_item', rootId:rootId || getDefaultSailingBuilderRootId(), childType:itemType || 'area', targetId:null};
   document.body.insertAdjacentHTML('beforeend', renderSailingRootCreateItemModal(builderModalState.rootId, builderModalState.childType));
   setTimeout(() => {
     const input = document.getElementById('yfdSailingRootItemTitle');
@@ -3552,7 +4820,7 @@ function openSailingRootCreateItemModal(rootId, itemType){
 }
 
 function createSailingRootItem(rootId, itemType, title, note){
-  const root = getSailingBuilderRoot(rootId || 'sailing_top');
+  const root = getSailingBuilderRoot(rootId || getDefaultSailingBuilderRootId());
   const cleanTitle = (title || '').trim();
   if(!cleanTitle) return false;
 
@@ -3585,7 +4853,7 @@ function submitSailingRootCreateItem(){
 
   const title = document.getElementById('yfdSailingRootItemTitle')?.value || '';
   const note = document.getElementById('yfdSailingRootItemNote')?.value || '';
-  const rootId = builderModalState.rootId || 'sailing_top';
+  const rootId = builderModalState.rootId || getDefaultSailingBuilderRootId();
 
   if(createSailingRootItem(rootId, builderModalState.childType, title, note)){
     closeBuilderModal();
@@ -3754,20 +5022,21 @@ function renderSailingEquipmentScreen(found, push=true){
   module.hidden = false;
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${item.title}</h2>
-          <p>Equipment</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row yfd-equipment-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
-      <button class="yfd-add-instance yfd-action-add" data-sailing-add-instance="${item.id}" type="button">+ Add instance</button>
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
+      ${renderYfdContextObjectCard({
+        kind:'sailing_item',
+        id:item.id,
+        title:item.title || 'Equipment',
+        displayTitle:getYfdActiveVesselLabel(),
+        displaySubtitle:`Sailing equipment: ${item.title || 'Equipment'}`,
+        editType:'sailing_item',
+        deleteType:'sailing_item'
+      })}
+      ${renderForwardButton()}
     </div>
 
     <section class="yfd-instances-card">
@@ -3778,11 +5047,19 @@ function renderSailingEquipmentScreen(found, push=true){
 
       ${item.instances.map(instance => `
         <div class="yfd-instance-row">
-          <strong>${instance.title}</strong>
+          <strong>${yfdEscapeAttr(instance.title)}</strong>
+          ${renderYfdTaskBoard('instance', instance.id, instance.title || 'Instance')}
           <div>
-            ${renderBuilderNoteButton('instance', instance.id)}
-            ${renderBuilderEditButton('instance', instance.id)}
             <button class="yfd-service-link" type="button">Open service</button>
+            ${renderYfdObjectActionMenu({
+              kind:'instance',
+              id:instance.id,
+              title:instance.title || 'Instance',
+              editType:'instance',
+              deleteType:'instance',
+              canEdit:false,
+              canDelete:false
+            })}
           </div>
         </div>
       `).join('')}
@@ -3812,20 +5089,21 @@ function openSailingRootAreaScreen(found, push=true){
   module.hidden = false;
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">${item.title}</h2>
-          <p>${item.note || 'Area / Zone'}</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
-      <button class="yfd-add-item yfd-action-add" type="button" disabled>+ Add item</button>
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
+      ${renderYfdContextObjectCard({
+        kind:'sailing_item',
+        id:item.id,
+        title:item.title || 'Area / Zone',
+        displayTitle:getYfdActiveVesselLabel(),
+        displaySubtitle:`Sailing area: ${item.title || 'Area / Zone'}`,
+        editType:'sailing_item',
+        deleteType:'sailing_item'
+      })}
+      ${renderForwardButton()}
     </div>
 
     <section class="yfd-builder-empty-state yfd-sailing-root-empty">
@@ -3852,7 +5130,8 @@ function openSailingRootItemScreen(itemId, push=true){
 }
 
 function openSailingBuilderRoot(rootId, push=true){
-  const root = getSailingBuilderRoot(rootId || 'sailing_top');
+  const root = getSailingBuilderRoot(rootId || getDefaultSailingBuilderRootId());
+  if(!root) return;
   const title = getSailingBuilderRootTitle(root.id);
   const items = root.items || [];
 
@@ -3869,19 +5148,22 @@ function openSailingBuilderRoot(rootId, push=true){
 
   module.hidden = false;
   module.innerHTML = `
-    <section class="yfd-module-head">
-      <div>
-        <span>Custom sailing structure</span>
-        <h2>${title}</h2>
-        <p>${getSailingBuilderRootNote(root.id)}</p>
-      </div>
-    </section>
+    <div class="yfd-module-head">
+      ${getYfdBuilderHeaderCard()}
+    </div>
 
-    <div class="yfd-module-action-row">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
-      <button class="yfd-add-item yfd-action-add" data-sailing-root-add-menu="${root.id}" type="button">+ Add item</button>
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+    <div class="yfd-module-action-row yfd-builder-action-row">
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
+      ${renderYfdContextObjectCard({
+        kind:'sailing_root',
+        id:root.id,
+        title,
+        displayTitle:getYfdActiveVesselLabel(),
+        displaySubtitle:`Sailing section: ${title}`,
+        canEdit:false,
+        canDelete:false
+      })}
+      ${renderForwardButton()}
     </div>
 
     <div class="yfd-list yfd-builder-page-list yfd-sailing-root-list">
@@ -3894,6 +5176,11 @@ function openSailingBuilderRoot(rootId, push=true){
           <button data-sailing-root-add-menu="${root.id}" type="button">+ Add item</button>
         </section>
       `}
+      ${items.length ? `
+        <section class="yfd-builder-page-add-row">
+          <button data-sailing-root-add-menu="${root.id}" type="button">+ Add item</button>
+        </section>
+      ` : ''}
     </div>
   `;
 
@@ -3920,10 +5207,19 @@ function getBuilderV2HullMarkerName(hullId, hullCount){
 
 function renderBuilderV2HullMarkerCard(hullId, label){
   const marker = getBuilderV2HullMarkerName(hullId, state.builderHullCount || 1);
+  const isMultihull = (state.builderHullCount || 1) > 1;
 
   return `
-    <article class="yfd-builder-v2-hull-card" data-open-builder-hull="${hullId}" role="button" tabindex="0" aria-label="Open ${yfdEscapeAttr(label)}">
+    <article class="yfd-builder-v2-hull-card ${isMultihull ? 'yfd-card-task-menu-only' : ''}" data-open-builder-hull="${hullId}" role="button" tabindex="0" aria-label="Open ${yfdEscapeAttr(label)}">
       <strong class="yfd-builder-v2-hull-card-title">${marker}</strong>
+      ${isMultihull ? '' : renderYfdTaskBoard('hull', hullId, label)}
+      ${renderYfdObjectActionMenu({
+        kind:'hull',
+        id:hullId,
+        title:label,
+        canEdit:false,
+        canDelete:false
+      })}
     </article>
   `;
 }
@@ -3936,26 +5232,26 @@ function formatBuilderDeckItemCount(count){
 
 function renderBuilderV2DeckCard(deck, extraClass=''){
   const title = deck && deck.title ? deck.title : 'Untitled deck';
-  const count = getBuilderDeckChildCount(deck);
   const deckId = deck && deck.id ? deck.id : '';
   const cardClass = extraClass ? `yfd-builder-v2-deck-card ${extraClass}` : 'yfd-builder-v2-deck-card';
+  const isSharedDeck = String(extraClass || '').includes('shared');
+  const isLowerMultihullDeck = (state.builderHullCount || 1) > 1 && !isSharedDeck;
 
   return `
-    <article class="${cardClass}" data-open-builder-deck="${deckId}" role="button" tabindex="0" aria-label="Open deck">
-      <strong>${title}</strong>
-      <span class="yfd-builder-v2-count-badge">${formatBuilderDeckItemCount(count)}</span>
+    <article class="${cardClass} ${isLowerMultihullDeck ? 'yfd-card-task-menu-only' : ''}" data-open-builder-deck="${deckId}" role="button" tabindex="0" aria-label="Open deck">
+      <strong>${yfdEscapeAttr(title)}</strong>
+      ${isLowerMultihullDeck ? '' : renderYfdTaskBoard('deck', deckId, title)}
+      ${renderYfdObjectActionMenu({kind:'deck', id:deckId, title, editType:'deck', deleteType:'deck'})}
     </article>
   `;
 }
 
 function renderBuilderRootYachtNameCard(){
-  const yacht = getActiveYacht && getActiveYacht();
-  const name = (yacht && yacht.name) || (state.builder && state.builder.modelName) || 'Custom Yacht';
+  const displayName = getYfdActiveVesselLabel();
 
   return `
     <div class="yfd-builder-yacht-name-card" aria-label="Current yacht">
-      <span>Yacht</span>
-      <strong>${yfdEscapeAttr(name)}</strong>
+      <strong>${yfdEscapeAttr(displayName)}</strong>
     </div>
   `;
 }
@@ -3979,6 +5275,10 @@ function renderCustomBuilderScreenV2(push=true){
 
   const sharedDecks = (state.builder.sharedDecks || [])
     .filter(deck => (deck.hullMode || hullCount) === hullCount);
+  const upperDeckTitle = hullCount > 1 ? 'Shared decks' : 'Upper decks';
+  const upperDeckNote = hullCount > 1 ? 'Common decks above the hulls' : 'Decks above the main hull';
+  const upperDeckButton = hullCount > 1 ? 'Add shared deck' : 'Add upper deck';
+  const lowerDeckButton = hullCount > 1 ? 'Add deck' : 'Add lower deck';
 
   const hullBlocks = Array.from({length:hullCount}).map((_, i) => {
     const n = i + 1;
@@ -3994,7 +5294,7 @@ function renderCustomBuilderScreenV2(push=true){
         ${renderBuilderV2HullMarkerCard(hullId, label)}
 
         <div class="yfd-builder-v2-subhead">
-          <strong>Decks</strong>
+          <strong>Lower decks</strong>
           <span>Create decks belonging to this hull</span>
         </div>
 
@@ -4002,7 +5302,7 @@ function renderCustomBuilderScreenV2(push=true){
           ${decks.length ? decks.map(renderBuilderV2DeckCard).join('') : ''}
           <button class="yfd-builder-slot yfd-builder-working-slot yfd-builder-v2-add-deck" data-builder-add-deck="hull" data-builder-hull="${hullId}" type="button">
             <b>+</b>
-            <span>Add deck</span>
+            <span>${lowerDeckButton}</span>
           </button>
         </div>
       </section>
@@ -4011,38 +5311,31 @@ function renderCustomBuilderScreenV2(push=true){
 
   module.innerHTML = `
     <div class="yfd-module-head">
-      <div class="yfd-module-card yfd-header-card">
-        ${renderLogo()}
-        <div>
-          <h2 class="yfd-module-title">REVOYACHT</h2>
-          <p>Operational yacht structure builder for decks, zones and onboard equipment.</p>
-        </div>
-      </div>
+      ${getYfdBuilderHeaderCard()}
     </div>
 
     <div class="yfd-module-action-row yfd-custom-builder-actions">
-      <button class="yfd-action-back" data-back type="button">← Back</button>
+      <button class="yfd-action-back yfd-nav-arrow yfd-nav-arrow-back" data-back type="button" aria-label="Back"><span aria-hidden="true">&lsaquo;</span></button>
       ${renderBuilderRootYachtNameCard()}
-      ${renderGalleryButton()}
-      ${renderQuickShotButton()}
+      ${renderForwardButton()}
     </div>
 
-    ${hullCount > 1 ? `
-      <section class="yfd-builder-shared yfd-builder-v2-shared">
+    ${isSailingYacht() ? renderSailingBuilderRootButtons() : ''}
+
+    <section class="yfd-builder-shared yfd-builder-v2-shared yfd-builder-v2-upper">
         <div class="yfd-builder-label">
-          <strong>Shared decks</strong>
-          <span>Common decks above the hulls</span>
+          <strong>${upperDeckTitle}</strong>
+          <span>${upperDeckNote}</span>
         </div>
 
         <div class="yfd-builder-v2-card-grid yfd-builder-v2-shared-grid">
-          ${sharedDecks.map(deck => renderBuilderV2DeckCard(deck, 'yfd-builder-v2-shared-deck-card')).join('')}
           <button class="yfd-builder-slot yfd-builder-shared-add" data-builder-add-deck="shared" type="button">
             <b>+</b>
-            <span>Add shared deck</span>
+            <span>${upperDeckButton}</span>
           </button>
+          ${sharedDecks.map(deck => renderBuilderV2DeckCard(deck, 'yfd-builder-v2-shared-deck-card')).join('')}
         </div>
       </section>
-    ` : '<section class="yfd-builder-v2-bottom-placeholder" aria-hidden="true"></section>'}
 
     ${hullCount === 3 ? `
       <div class="yfd-builder-v2-swipe-hint" aria-hidden="true">
@@ -4129,7 +5422,7 @@ function renderCustomBuilderScreen(push=true){
     <div class="yfd-module-action-row yfd-custom-builder-actions ${isSailingYacht() ? 'yfd-sailing-builder-actions' : ''}">
       <button class="yfd-action-back" data-back type="button">← Back</button>
       ${isSailingYacht()
-        ? '<button class="yfd-sailing-builder-root-btn yfd-sailing-top-action" data-sailing-builder-root="sailing_top" type="button">Top</button>'
+        ? ''
         : '<button class="yfd-add-item yfd-action-add" type="button">+ Add shared deck</button>'}
       ${renderGalleryButton()}
       ${renderQuickShotButton()}
@@ -4392,7 +5685,7 @@ function yfdLoadActiveScreen(){
 }
 
 function findReadyEquipmentParent(title){
-  const layers = [...getAllLayers(), ...treeNodes];
+  const layers = [...getAllLayers(), ...getActiveReadyTreeNodes()];
 
   for(const layer of layers){
     const items = Array.isArray(layer.items) ? layer.items : [];
@@ -4533,16 +5826,21 @@ function resetWorkingStateForNewYacht(hullCount){
 
   yfdClearActiveScreen();
   navStack = [];
+  yfdClearForwardStack();
 }
 
 function createYachtFromQuickSetup(data){
   const now = Date.now();
+  const isSo439 = data && (
+    data.startMethod === SO439_READY_METHOD ||
+    (data.meta && data.meta.template === SO439_TEMPLATE_KEY)
+  );
   const yacht = {
     id:'yacht_' + now,
-    name:(data && data.name ? data.name.trim() : '') || 'My yacht',
-    vesselType:(data && data.vesselType) || 'motor',
-    hullCount:Math.max(1, Math.min(3, Number(data && data.hullCount) || 1)),
-    rig:(data && data.rig) || null,
+    name:(data && data.name ? data.name.trim() : '') || (isSo439 ? SO439_TEMPLATE_TITLE : 'My yacht'),
+    vesselType:isSo439 ? 'sailing' : ((data && data.vesselType) || 'motor'),
+    hullCount:isSo439 ? 1 : Math.max(1, Math.min(3, Number(data && data.hullCount) || 1)),
+    rig:isSo439 ? 'bermudan_sloop' : ((data && data.rig) || null),
     startMethod:(data && data.startMethod) || ((data && data.meta && data.meta.startMethod) || 'scratch'),
     meta:(data && data.meta) || {},
     status:'draft',
@@ -4552,6 +5850,7 @@ function createYachtFromQuickSetup(data){
   };
 
   resetWorkingStateForNewYacht(yacht.hullCount);
+  if(isSo439) ensureSo439EquipmentDefaults();
 
   state.yachts.push(yacht);
   state.activeYachtId = yacht.id;
@@ -4678,6 +5977,7 @@ function deleteYacht(yachtId){
 /* === V40-D3C-1A Admin Base Tool readonly foundation 20260507 === */
 
 const ADMIN_BASE_STORAGE_KEY = 'yfd_admin_base_draft_v1';
+const ADMIN_BASE_VERSION = '20260508-v40d3d5a-sailing-rig-db-admin';
 let adminBaseActiveSection = 'main';
 
 function adminBaseItems(names, category){
@@ -4692,9 +5992,114 @@ function adminBaseItems(names, category){
     }));
 }
 
+function adminBaseGroupedItems(groups, fallbackCategory){
+  const items = [];
+
+  (groups || []).forEach(group => {
+    const category = group.category || group.title || fallbackCategory || 'Equipment';
+
+    String(group.items || '')
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean)
+      .forEach(name => {
+        items.push({
+          id:slugifyCustomKey(category + '_' + name),
+          title:name,
+          category
+        });
+      });
+  });
+
+  return items;
+}
+
+function sailingRigGroup(rigType, id, title, type, note, itemGroups, extra){
+  return Object.assign({
+    id,
+    title,
+    type,
+    note,
+    rig_type:rigType,
+    section_key:id,
+    items:adminBaseGroupedItems(itemGroups, title)
+  }, extra || {});
+}
+
+function getDefaultSailingRigGroups(){
+  return {
+    bermudan_sloop:[
+      sailingRigGroup('bermudan_sloop', 'sailing_bermudan_aft_sails', 'AFT SAILS', 'sail_group', 'Bermudan sloop mainsail group.', [
+        {title:'Mainsail group', items:'Mainsail, Fully battened mainsail, Partially battened mainsail, Loose-footed mainsail, In-mast furling mainsail, In-boom furling mainsail, Trysail, Storm mainsail'}
+      ]),
+      sailingRigGroup('bermudan_sloop', 'sailing_bermudan_forward_sails', 'FORWARD SAILS', 'sail_group', 'Bermudan sloop headsail and forward sail group.', [
+        {title:'Headsail / forward sail group', items:'Jib, Working jib, Genoa, Light genoa, Heavy genoa, Yankee, Solent jib, Staysail, Storm jib, Code 0, Gennaker, Asymmetric spinnaker, Symmetric spinnaker, Drifter'}
+      ]),
+      sailingRigGroup('bermudan_sloop', 'sailing_bermudan_top', 'TOP', 'mast_top', 'Main mast top equipment and masthead fittings.', [
+        {title:'Main Mast Top', items:'Masthead navigation light, Anchor light, Tricolour light, Wind sensor, Windex / wind vane, VHF antenna, AIS antenna, GPS antenna, Cellular / LTE antenna, Wi-Fi antenna, TV antenna, Lightning rod / dissipater, Masthead sheaves, Halyard exit sheaves, Spinnaker crane, Masthead crane / fitting, Topping lift attachment, Backstay attachment, Forestay attachment, Shroud attachment points, Flag halyard block, Masthead camera, Cable gland / masthead cable exit'}
+      ], {instance_policy:'main_mast_only'}),
+      sailingRigGroup('bermudan_sloop', 'sailing_bermudan_spar', 'SPAR', 'spar', 'Main mast, boom, poles and foils.', [
+        {title:'Main mast / boom / foils', items:'Main mast, Boom, Spreaders, Bowsprit, Sprit / prodder, Spinnaker pole, Whisker pole, Boom vang / kicker strut, Gooseneck fitting, Mast track, Sail track, Furler foil, Headstay foil, Mast base / mast step fitting'}
+      ]),
+      sailingRigGroup('bermudan_sloop', 'sailing_bermudan_rigs', 'RIGS', 'rigging', 'Standing and running rigging.', [
+        {title:'Standing Rigging', items:'Forestay, Backstay, Split backstay, Adjustable backstay, Inner forestay, Baby stay, Cap shrouds, Upper shrouds, Lower shrouds, Intermediate shrouds, Diagonal stays, Checkstays, Running backstays, Chainplates, Turnbuckles / bottle screws, Toggles, Tangs, Clevis pins, Cotter pins / split pins, Swage terminals, Mechanical terminals, Rod rigging, Wire rigging, Dyneema standing rigging'},
+        {title:'Running Rigging', items:'Main halyard, Genoa halyard, Jib halyard, Spinnaker halyard, Code 0 halyard, Staysail halyard, Topping lift, Main sheet, Genoa sheets, Jib sheets, Spinnaker sheets, Spinnaker guys, Code 0 sheets, Staysail sheets, Main outhaul, Cunningham, Reefing lines, Reef 1 line, Reef 2 line, Reef 3 line, Boom vang control line, Traveller control lines, Backstay control line, Furling line, Headsail furling line, Code 0 furling line, Tack line, Downhaul, Preventer line, Barber haulers, Lazy jacks, Lazy bag lines'}
+      ], {database_meaning:'rigging'})
+    ],
+    ketch:[
+      sailingRigGroup('ketch', 'sailing_ketch_mast_sails', 'MAST SAILS', 'sail_group', 'Main mast and mizzen sail inventory.', [
+        {title:'Main Mast Sails', items:'Main mainsail, Fully battened main mainsail, In-mast furling main mainsail, In-boom furling main mainsail, Trysail, Storm mainsail'},
+        {title:'Mizzen Sails', items:'Mizzen sail, Fully battened mizzen, In-mast furling mizzen, Mizzen storm sail, Mizzen riding sail'}
+      ]),
+      sailingRigGroup('ketch', 'sailing_ketch_stay_rigging_sails', 'STAY / RIGGING / SAILS', 'sail_group', 'Headsails, staysails and stay-set sails.', [
+        {title:'Headsails', items:'Jib, Working jib, Genoa, Yankee, Solent jib, Storm jib, Code 0, Gennaker, Asymmetric spinnaker, Symmetric spinnaker'},
+        {title:'Staysails', items:'Staysail, Inner staysail, Mizzen staysail, Fisherman staysail'},
+        {title:'Stay-set Sails', items:'Sail set between main and mizzen, Sail set from mizzen mast, Sail set on inner forestay'}
+      ]),
+      sailingRigGroup('ketch', 'sailing_ketch_top', 'TOP', 'mast_top', 'Main mast and mizzen mast top equipment.', [
+        {title:'Main Mast Top', items:'Masthead navigation light, Anchor light, Tricolour light, Wind sensor, Windex / wind vane, VHF antenna, AIS antenna, GPS antenna, Masthead sheaves, Halyard exit sheaves, Main backstay attachment, Main forestay attachment, Main shroud attachment points'},
+        {title:'Mizzen Mast Top', items:'Mizzen masthead light, Mizzen anchor light / all-round light, Wind indicator, Antenna mount, Mizzen masthead sheaves, Mizzen halyard sheaves, Mizzen backstay attachment, Mizzen forestay attachment, Mizzen shroud attachment points'}
+      ], {instance_policy:'per_mast'}),
+      sailingRigGroup('ketch', 'sailing_ketch_spar', 'SPAR', 'spar', 'Main, mizzen and shared forward spars.', [
+        {title:'Main Mast Spars', items:'Main mast, Main boom, Main spreaders, Main mast track, Main sail track, Main gooseneck fitting, Main boom vang / kicker strut'},
+        {title:'Mizzen Mast Spars', items:'Mizzen mast, Mizzen boom, Mizzen spreaders, Mizzen mast track, Mizzen sail track, Mizzen gooseneck fitting, Mizzen boom vang / kicker strut'},
+        {title:'Shared / Forward Spars', items:'Bowsprit, Sprit / prodder, Spinnaker pole, Whisker pole, Furler foil, Headstay foil, Staysail stay foil'}
+      ]),
+      sailingRigGroup('ketch', 'sailing_ketch_rigs', 'RIGS', 'rigging', 'Standing and running rigging for main and mizzen masts.', [
+        {title:'Standing Rigging', items:'Main forestay, Main backstay, Main cap shrouds, Main upper shrouds, Main lower shrouds, Main intermediate shrouds, Main diagonal stays, Main running backstays, Main checkstays, Main chainplates, Main turnbuckles / bottle screws, Mizzen forestay, Mizzen backstay, Mizzen cap shrouds, Mizzen upper shrouds, Mizzen lower shrouds, Mizzen intermediate shrouds, Mizzen diagonal stays, Mizzen running backstays, Mizzen checkstays, Mizzen chainplates, Mizzen turnbuckles / bottle screws, Triatic stay, Mizzen stay, Main-to-mizzen stay, Inner forestay, Baby stay, Staysail stay, Toggles, Tangs, Clevis pins, Cotter pins / split pins, Swage terminals, Mechanical terminals, Rod rigging, Wire rigging, Dyneema standing rigging'},
+        {title:'Running Rigging', items:'Main halyard, Main sheet, Main outhaul, Main reefing lines, Main topping lift, Main boom vang control line, Main traveller control lines, Main Cunningham, Main preventer line, Mizzen halyard, Mizzen sheet, Mizzen outhaul, Mizzen reefing lines, Mizzen topping lift, Mizzen boom vang control line, Mizzen traveller control lines, Mizzen Cunningham, Mizzen preventer line, Genoa halyard, Jib halyard, Staysail halyard, Spinnaker halyard, Code 0 halyard, Mizzen staysail halyard, Genoa sheets, Jib sheets, Staysail sheets, Mizzen staysail sheets, Spinnaker sheets, Spinnaker guys, Code 0 sheets, Headsail furling line, Staysail furling line, Code 0 furling line, Tack line, Downhaul, Barber haulers'}
+      ], {database_meaning:'rigging'})
+    ],
+    schooner:[
+      sailingRigGroup('schooner', 'sailing_schooner_mast_sails', 'MAST SAILS', 'sail_group', 'Foremast and main mast sail inventory.', [
+        {title:'Foremast Sails', items:'Foresail, Fore gaff sail, Fore topsail, Fore storm sail, Fore trysail'},
+        {title:'Main Mast Sails', items:'Mainsail, Main gaff sail, Main topsail, Main storm sail, Main trysail'}
+      ]),
+      sailingRigGroup('schooner', 'sailing_schooner_stay_rigging_sails', 'STAY / RIGGING / SAILS', 'sail_group', 'Headsails, staysails and stay-set sails.', [
+        {title:'Headsails', items:'Jib, Flying jib, Jib topsail, Genoa, Yankee, Storm jib, Code 0, Gennaker, Asymmetric spinnaker'},
+        {title:'Staysails', items:'Fore staysail, Main staysail, Inner staysail, Fisherman staysail, Balloon staysail'},
+        {title:'Stay-set Sails', items:'Sail set between foremast and main mast, Sail set forward of foremast, Sail set on inner stay'}
+      ]),
+      sailingRigGroup('schooner', 'sailing_schooner_top', 'TOP', 'mast_top', 'Foremast and main mast top equipment.', [
+        {title:'Foremast Top', items:'Masthead navigation light, Anchor light, Wind indicator, VHF antenna, AIS antenna, GPS antenna, Foremast sheaves, Fore halyard sheaves, Fore stay attachment, Fore shroud attachment points, Flag halyard block'},
+        {title:'Main Mast Top', items:'Masthead navigation light, Anchor light, Tricolour light, Wind sensor, Windex / wind vane, VHF antenna, AIS antenna, GPS antenna, Main masthead sheaves, Main halyard sheaves, Main stay attachment, Main backstay attachment, Main shroud attachment points, Flag halyard block'}
+      ], {instance_policy:'per_mast'}),
+      sailingRigGroup('schooner', 'sailing_schooner_spar', 'SPAR', 'spar', 'Foremast, main mast and shared forward spars.', [
+        {title:'Foremast Spars', items:'Foremast, Fore boom, Fore gaff, Fore yard, Fore spreaders, Fore mast track, Fore sail track, Fore gooseneck fitting'},
+        {title:'Main Mast Spars', items:'Main mast, Main boom, Main gaff, Main yard, Main spreaders, Main mast track, Main sail track, Main gooseneck fitting'},
+        {title:'Shared / Forward Spars', items:'Bowsprit, Jibboom, Flying jibboom, Spinnaker pole, Whisker pole, Furler foil, Headstay foil, Staysail stay foil'}
+      ]),
+      sailingRigGroup('schooner', 'sailing_schooner_rigs', 'RIGS', 'rigging', 'Standing and running rigging for foremast and main mast.', [
+        {title:'Standing Rigging', items:'Fore forestay, Fore backstay, Fore cap shrouds, Fore upper shrouds, Fore lower shrouds, Fore intermediate shrouds, Fore diagonal stays, Fore running backstays, Fore chainplates, Fore turnbuckles / bottle screws, Main forestay, Main backstay, Main cap shrouds, Main upper shrouds, Main lower shrouds, Main intermediate shrouds, Main diagonal stays, Main running backstays, Main chainplates, Main turnbuckles / bottle screws, Triatic stay, Main stay, Fore-to-main stay, Headstay, Inner forestay, Jib stay, Flying jib stay, Staysail stay, Bobstay, Bowsprit shrouds, Dolphin striker stay, Toggles, Tangs, Clevis pins, Cotter pins / split pins, Swage terminals, Mechanical terminals, Rod rigging, Wire rigging, Dyneema standing rigging'},
+        {title:'Running Rigging', items:'Fore halyard, Fore throat halyard, Fore peak halyard, Fore sheet, Fore topsail halyard, Fore topsail sheet, Fore outhaul, Fore reefing lines, Fore topping lift, Fore preventer line, Main halyard, Main throat halyard, Main peak halyard, Main sheet, Main topsail halyard, Main topsail sheet, Main outhaul, Main reefing lines, Main topping lift, Main preventer line, Jib halyard, Flying jib halyard, Staysail halyard, Genoa halyard, Spinnaker halyard, Code 0 halyard, Jib sheets, Flying jib sheets, Staysail sheets, Genoa sheets, Spinnaker sheets, Spinnaker guys, Code 0 sheets, Headsail furling line, Staysail furling line, Code 0 furling line, Tack line, Downhaul, Barber haulers'}
+      ], {database_meaning:'rigging'})
+    ]
+  };
+}
+
 function getDefaultAdminBaseDraft(){
   return {
-    version:'20260507-v40d3c2',
+    version:ADMIN_BASE_VERSION,
     sharedGroups:[
       {
         id:'shared_navigation',
@@ -4759,23 +6164,7 @@ function getDefaultAdminBaseDraft(){
         items:adminBaseItems('Passerelle, Central Locker / Water Toys Garage, Grill, Aft Shower, Ice Maker, Refrigerator, Deck Surface', 'Deck equipment')
       }
     ],
-    sailingRigGroups:{
-      bermudan_sloop:[
-        {id:'sailing_bermudan_spar', title:'Spar', items:adminBaseItems('Main Mast, Boom, Spreaders, Mast Base, Mast Lights, Gooseneck, Vang / Kicker', 'Bermudan sloop spar')},
-        {id:'sailing_bermudan_rigging', title:'Rigging', items:adminBaseItems('Forestay, Backstay, Shrouds, Turnbuckles, Chainplates, Halyards, Sheets, Winches, Furler', 'Bermudan sloop rigging')},
-        {id:'sailing_bermudan_sails', title:'Sails', items:adminBaseItems('Main Sail, Genoa / Jib, Code Zero, Gennaker, Spinnaker, Sail Storage', 'Bermudan sloop sails')}
-      ],
-      ketch:[
-        {id:'sailing_ketch_spar', title:'Spar', items:adminBaseItems('Main Mast, Mizzen Mast, Main Boom, Mizzen Boom, Spreaders, Mast Base, Mast Lights', 'Ketch spar')},
-        {id:'sailing_ketch_rigging', title:'Rigging', items:adminBaseItems('Main Shrouds, Mizzen Shrouds, Forestay, Backstay, Mizzen Stays, Halyards, Sheets, Winches, Furlers', 'Ketch rigging')},
-        {id:'sailing_ketch_sails', title:'Sails', items:adminBaseItems('Main Sail, Mizzen Sail, Headsail, Staysail, Code Zero, Gennaker / Spinnaker, Sail Storage', 'Ketch sails')}
-      ],
-      schooner:[
-        {id:'sailing_schooner_spar', title:'Spar', items:adminBaseItems('Fore Mast, Main Mast, Fore Boom, Main Boom, Spreaders, Mast Base, Mast Lights', 'Schooner spar')},
-        {id:'sailing_schooner_rigging', title:'Rigging', items:adminBaseItems('Fore Mast Rigging, Main Mast Rigging, Stays, Shrouds, Halyards, Sheets, Winches, Furlers', 'Schooner rigging')},
-        {id:'sailing_schooner_sails', title:'Sails', items:adminBaseItems('Fore Sail, Main Sail, Staysail, Headsail, Downwind Sails, Sail Storage', 'Schooner sails')}
-      ]
-    }
+    sailingRigGroups:getDefaultSailingRigGroups()
   };
 }
 
@@ -4793,7 +6182,8 @@ function getDefaultAdminBaseStructureTemplates(){
         {id:'tpl_engine_room', title:'Engine Room', items:adminBaseItems('Main Engine Port, Main Engine Starboard, Gearbox Port, Gearbox Starboard, Generator #1, Generator #2, Chiller, Watermaker', 'Template / Engine Room')},
         {id:'tpl_underwater', title:'Underwater / Hull', items:adminBaseItems('Keel / Киль, Shaft Port, Shaft Starboard, Propeller Port, Propeller Starboard, Rudder Port, Rudder Starboard, Bow Thruster, Stern Thruster', 'Template / Underwater')}
       ]
-    }
+    },
+    getSo439StructureTemplateRecord()
   ];
 }
 
@@ -4832,6 +6222,87 @@ function saveAdminBaseDraft(){
   } catch(e){}
 }
 
+function cloneAdminBaseValue(value){
+  return JSON.parse(JSON.stringify(value || null));
+}
+
+function adminBaseItemTitleKey(item){
+  return String(item && item.title || '').trim().toLowerCase();
+}
+
+function appendAdminBaseItemsUnique(group, items){
+  if(!group || !Array.isArray(items)) return;
+  if(!Array.isArray(group.items)) group.items = [];
+
+  const seen = new Set(group.items.map(adminBaseItemTitleKey).filter(Boolean));
+
+  items.forEach(item => {
+    const key = adminBaseItemTitleKey(item);
+    if(!key || seen.has(key)) return;
+    group.items.push(cloneAdminBaseValue(item));
+    seen.add(key);
+  });
+}
+
+function getLegacySailingGroupTarget(rigId, groupId){
+  const maps = {
+    bermudan_sloop:{
+      sailing_bermudan_rigging:'sailing_bermudan_rigs',
+      sailing_bermudan_sails:'sailing_bermudan_forward_sails'
+    },
+    ketch:{
+      sailing_ketch_rigging:'sailing_ketch_rigs',
+      sailing_ketch_sails:'sailing_ketch_mast_sails'
+    },
+    schooner:{
+      sailing_schooner_rigging:'sailing_schooner_rigs',
+      sailing_schooner_sails:'sailing_schooner_mast_sails'
+    }
+  };
+
+  return maps[rigId] && maps[rigId][groupId] ? maps[rigId][groupId] : null;
+}
+
+function mergeAdminBaseGroupsWithDefaults(currentGroups, defaultGroups, rigId){
+  const result = [];
+  const legacyItemsByTarget = {};
+
+  (Array.isArray(currentGroups) ? currentGroups : []).forEach(group => {
+    if(!group || !group.id) return;
+
+    const targetId = getLegacySailingGroupTarget(rigId, group.id);
+    if(targetId && targetId !== group.id){
+      if(!legacyItemsByTarget[targetId]) legacyItemsByTarget[targetId] = [];
+      legacyItemsByTarget[targetId] = legacyItemsByTarget[targetId].concat(group.items || []);
+      return;
+    }
+
+    result.push(group);
+  });
+
+  (defaultGroups || []).forEach(defaultGroup => {
+    let group = result.find(item => item && item.id === defaultGroup.id);
+
+    if(!group){
+      group = cloneAdminBaseValue(defaultGroup);
+      result.push(group);
+    } else {
+      group.title = defaultGroup.title;
+      group.type = defaultGroup.type;
+      group.note = defaultGroup.note;
+      group.rig_type = defaultGroup.rig_type;
+      group.section_key = defaultGroup.section_key || defaultGroup.id;
+      group.database_meaning = defaultGroup.database_meaning || defaultGroup.type;
+      group.instance_policy = defaultGroup.instance_policy || group.instance_policy;
+      appendAdminBaseItemsUnique(group, defaultGroup.items || []);
+    }
+
+    appendAdminBaseItemsUnique(group, legacyItemsByTarget[defaultGroup.id] || []);
+  });
+
+  return result;
+}
+
 
 function ensureAdminBaseDraftUpgrades(){
   if(!adminBaseDraft || typeof adminBaseDraft !== 'object') return;
@@ -4839,6 +6310,37 @@ function ensureAdminBaseDraftUpgrades(){
   if(!Array.isArray(adminBaseDraft.structureTemplates)){
     adminBaseDraft.structureTemplates = getDefaultAdminBaseStructureTemplates();
   }
+
+  getDefaultAdminBaseStructureTemplates().forEach(defaultTemplate => {
+    const existing = adminBaseDraft.structureTemplates.find(template => (
+      template &&
+      (
+        template.id === defaultTemplate.id ||
+        (defaultTemplate.template_key && template.template_key === defaultTemplate.template_key)
+      )
+    ));
+
+    if(!existing){
+      adminBaseDraft.structureTemplates.push(cloneAdminBaseValue(defaultTemplate));
+      return;
+    }
+
+    if(defaultTemplate.template_key === SO439_TEMPLATE_KEY){
+      existing.title = defaultTemplate.title;
+      existing.template_key = defaultTemplate.template_key;
+      existing.category = defaultTemplate.category;
+      existing.hull_type = defaultTemplate.hull_type;
+      existing.rig_type = defaultTemplate.rig_type;
+      existing.rig_subtype = defaultTemplate.rig_subtype;
+      existing.manufacturer = defaultTemplate.manufacturer;
+      existing.model = defaultTemplate.model;
+      existing.year = defaultTemplate.year;
+      existing.policy = defaultTemplate.policy;
+      existing.note = defaultTemplate.note;
+      existing.stats = cloneAdminBaseValue(defaultTemplate.stats);
+      existing.groups = cloneAdminBaseValue(defaultTemplate.groups);
+    }
+  });
 
   if(!Array.isArray(adminBaseDraft.motorYachtGroups)){
     adminBaseDraft.motorYachtGroups = [];
@@ -4864,6 +6366,23 @@ function ensureAdminBaseDraftUpgrades(){
       category:'Underwater / Hull'
     });
   }
+
+  if(adminBaseDraft.version !== ADMIN_BASE_VERSION){
+    const defaults = getDefaultSailingRigGroups();
+    if(!adminBaseDraft.sailingRigGroups || typeof adminBaseDraft.sailingRigGroups !== 'object'){
+      adminBaseDraft.sailingRigGroups = {};
+    }
+
+    ['bermudan_sloop','ketch','schooner'].forEach(rigId => {
+      adminBaseDraft.sailingRigGroups[rigId] = mergeAdminBaseGroupsWithDefaults(
+        adminBaseDraft.sailingRigGroups[rigId],
+        defaults[rigId],
+        rigId
+      );
+    });
+
+    adminBaseDraft.version = ADMIN_BASE_VERSION;
+  }
 }
 
 function getAdminBaseStructureTemplates(){
@@ -4876,6 +6395,17 @@ function getAdminBaseMainEquipmentGroups(){
   return []
     .concat(getAdminBaseMotorGroups())
     .concat(getAdminBaseSharedGroups());
+}
+
+function getAdminBaseEditableGroups(){
+  const sailing = adminBaseDraft.sailingRigGroups || {};
+  return getAdminBaseMainEquipmentGroups().concat(
+    Object.keys(sailing).reduce((list, rigId) => list.concat(sailing[rigId] || []), [])
+  );
+}
+
+function getAdminBaseReadyLibraryGroups(){
+  return getAdminBaseMainEquipmentGroups().slice();
 }
 
 function getAdminBaseSharedGroups(){
@@ -4938,7 +6468,7 @@ function renderAdminBaseRigBlock(rigId, rigTitle){
         <strong>${rigTitle}</strong>
       </div>
 
-      ${rigGroups.map(renderAdminBaseGroup).join('')}
+      ${rigGroups.map(group => renderAdminBaseGroup(group, {canAdd:true})).join('')}
     </section>
   `;
 }
@@ -4955,6 +6485,437 @@ function renderAdminBaseTemplate(template){
     </section>
   `;
 }
+
+function getReadyTemplateStaticRootById(id){
+  const roots = isReadySailingSO439Yacht()
+    ? getSo439SailingReadyRoots().concat(getSo439ReadyRootLayers())
+    : [].concat(baseLayers || []).concat(optionalLayers || []);
+
+  return roots
+    .find(layer => layer && layer.id === id) || null;
+}
+
+function isReadyTemplateStaticRoot(id){
+  return !!getReadyTemplateStaticRootById(id);
+}
+
+function getReadyTemplateContainerById(id){
+  if(!id) return null;
+  return getReadyTemplateStaticRootById(id)
+    || findNodeById(id)
+    || ((state.custom || []).find(deck => deck && deck.id === id) || null);
+}
+
+function applyReadyTemplateAdds(){
+  if(!Array.isArray(state.readyTemplateAdds)) state.readyTemplateAdds = [];
+
+  state.readyTemplateAdds.forEach(record => {
+    if(!record || !record.parentId || !record.item) return;
+
+    ensureReadyTemplateEquipmentStore(record.item, record.equipmentTemplates);
+
+    const parent = getReadyTemplateStaticRootById(record.parentId);
+    if(!parent) return;
+    if(!Array.isArray(parent.items)) parent.items = [];
+
+    const templateId = record.item.template_id || record.item.id || '';
+    const exists = parent.items.some(item => {
+      if(!item) return false;
+      return (templateId && (item.template_id === templateId || item.id === templateId))
+        || getStickerRef(parent.id, item) === getStickerRef(parent.id, record.item);
+    });
+
+    if(!exists){
+      parent.items.push(cloneAdminBaseValue(record.item));
+    }
+  });
+}
+
+function getReadyTemplateRootLayers(){
+  return getAllLayers()
+    .filter(Boolean)
+    .sort((a,b)=>(a.order ?? 999) - (b.order ?? 999));
+}
+
+function getReadyTemplateRows(){
+  const rows = [];
+  const visited = new Set();
+
+  function pushContainer(container, order, level, parentTitle, source){
+    if(!container || !container.id) return;
+
+    rows.push({
+      order,
+      level,
+      id:container.id,
+      ref:container.id,
+      parent:parentTitle || '',
+      parentId:'',
+      title:container.title || container.id,
+      type:level === 1 ? 'Deck / Layer' : 'Area / Zone',
+      note:container.note || '',
+      target:'',
+      key:'',
+      containerId:container.id,
+      canAdd:true,
+      source:source || (isReadyUserCreated(container) ? 'User ready-made' : 'Ready-made')
+    });
+
+    (container.items || []).forEach((item, index) => {
+      const itemOrder = order + '.' + (index + 1);
+      const ref = getStickerRef(container.id, item);
+      const display = getReadyDisplay(ref, item.title, item.type || '');
+      const targetId = item.target || '';
+      const targetNode = targetId ? getReadyTemplateContainerById(targetId) : null;
+      const kind = itemKind(item);
+
+      rows.push({
+        order:itemOrder,
+        level:level + 1,
+        id:item.id || ref,
+        ref,
+        parent:container.title || container.id,
+        parentId:container.id,
+        title:display.title || item.title || 'Untitled',
+        type:item.type || (kind === 'equipment' ? 'Equipment' : 'Area / Zone'),
+        note:item.note || '',
+        target:targetId,
+        key:item.key || '',
+        containerId:targetNode ? targetNode.id : '',
+        canAdd:!!targetNode,
+        canDelete:isReadyUserCreated(item),
+        source:isReadyUserCreated(item) ? 'User ready-made' : 'Ready-made'
+      });
+
+      if(targetNode && !visited.has(targetNode.id)){
+        visited.add(targetNode.id);
+        pushContainerChildren(targetNode, itemOrder, level + 1);
+      }
+    });
+  }
+
+  function pushContainerChildren(container, order, level){
+    (container.items || []).forEach((item, index) => {
+      const itemOrder = order + '.' + (index + 1);
+      const ref = getStickerRef(container.id, item);
+      const display = getReadyDisplay(ref, item.title, item.type || '');
+      const targetId = item.target || '';
+      const targetNode = targetId ? getReadyTemplateContainerById(targetId) : null;
+      const kind = itemKind(item);
+
+      rows.push({
+        order:itemOrder,
+        level:level + 1,
+        id:item.id || ref,
+        ref,
+        parent:container.title || container.id,
+        parentId:container.id,
+        title:display.title || item.title || 'Untitled',
+        type:item.type || (kind === 'equipment' ? 'Equipment' : 'Area / Zone'),
+        note:item.note || '',
+        target:targetId,
+        key:item.key || '',
+        containerId:targetNode ? targetNode.id : '',
+        canAdd:!!targetNode,
+        canDelete:isReadyUserCreated(item),
+        source:isReadyUserCreated(item) ? 'User ready-made' : 'Ready-made'
+      });
+
+      if(targetNode && !visited.has(targetNode.id)){
+        visited.add(targetNode.id);
+        pushContainerChildren(targetNode, itemOrder, level + 1);
+      }
+    });
+  }
+
+  getReadyTemplateRootLayers().forEach((layer, index) => {
+    visited.add(layer.id);
+    pushContainer(layer, String(index + 1), 1, '', isReadyUserCreated(layer) ? 'User ready-made' : 'Ready-made');
+  });
+
+  return rows;
+}
+
+function renderStructureTemplateTable(){
+  const rows = getReadyTemplateRows();
+  const equipmentCount = rows.filter(row => String(row.type || '').toLowerCase().includes('equipment')).length;
+  const containerCount = rows.filter(row => row.canAdd).length;
+  const activeTitle = isReadySailingSO439Yacht()
+    ? SO439_TEMPLATE_TITLE
+    : 'Ready-made motor yacht structure';
+  const activeNote = isReadySailingSO439Yacht()
+    ? 'Rows are generated from the SO439 sailing ready-made prototype opened by Ready-made.'
+    : 'Rows are generated from the same structure opened by Ready-made. Adding here writes back to that ready-made tree.';
+
+  return `
+    <section class="yfd-structure-template-live">
+      <div class="yfd-structure-template-summary">
+        <div>
+          <span>Live ready-made mirror</span>
+          <strong>${activeTitle}</strong>
+          <p>${activeNote}</p>
+        </div>
+        <div class="yfd-structure-template-stats">
+          <span>${rows.length} rows</span>
+          <span>${containerCount} containers</span>
+          <span>${equipmentCount} equipment</span>
+        </div>
+      </div>
+
+      <div class="yfd-structure-template-table" role="table" aria-label="Ready-made structure template">
+        <div class="yfd-structure-template-row yfd-structure-template-row-head" role="row">
+          <span>Order</span>
+          <span>Level</span>
+          <span>Title</span>
+          <span>Type</span>
+          <span>Parent</span>
+          <span>Link</span>
+          <span>Actions</span>
+        </div>
+        ${rows.map(row => `
+          <div class="yfd-structure-template-row" role="row" style="--template-level:${Math.max(1, row.level || 1)}">
+            <span class="yfd-template-order">${yfdEscapeAttr(row.order)}</span>
+            <span>${row.level}</span>
+            <span class="yfd-template-title">${yfdEscapeAttr(row.title)}</span>
+            <span>${yfdEscapeAttr(row.type)}</span>
+            <span>${yfdEscapeAttr(row.parent || '-')}</span>
+            <span>${yfdEscapeAttr(row.target || row.key || row.ref || '-')}</span>
+            <span class="yfd-template-actions">
+              ${row.canAdd ? `<button class="yfd-template-add-child" data-structure-template-add="${yfdEscapeAttr(row.containerId)}" type="button">+ Add</button>` : ''}
+              ${row.canDelete ? `<button class="yfd-template-delete-child" data-delete-ready-item="${yfdEscapeAttr(row.ref)}" data-delete-ready-parent="${yfdEscapeAttr(row.parentId)}" type="button">Delete</button>` : ''}
+            </span>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderStructureTemplateAddModal(parentId){
+  const parent = getReadyTemplateContainerById(parentId);
+  const title = parent ? parent.title : 'Ready-made container';
+
+  return `
+    <div class="yfd-action-backdrop" data-action-backdrop>
+      <section class="yfd-action-modal yfd-structure-template-add-modal">
+        <div class="yfd-action-head">
+          <div>
+            <span>Structure Template</span>
+            <strong>Add to ${yfdEscapeAttr(title)}</strong>
+          </div>
+          <button class="yfd-modal-close" data-close-action type="button">Г—</button>
+        </div>
+
+        <div class="yfd-choice-grid yfd-add-item-segments">
+          <button class="yfd-choice is-selected yfd-structure-template-kind" data-structure-template-kind="equipment" type="button">
+            <strong>Equipment</strong>
+          </button>
+          <button class="yfd-choice yfd-structure-template-kind" data-structure-template-kind="area" type="button">
+            <strong>Area / Zone</strong>
+          </button>
+        </div>
+
+        <label class="yfd-field">
+          <span>Names, separated by comma</span>
+          <textarea id="yfdStructureTemplateNames" data-structure-template-names rows="5" placeholder="Pump, Bar, Diving Station"></textarea>
+        </label>
+
+        <div class="yfd-builder-modal-note">
+          This writes into the ready-made working tree. Area / Zone creates a linked child container; Equipment creates a service-ready equipment object.
+        </div>
+
+        <div class="yfd-builder-modal-actions">
+          <button class="yfd-secondary-action" data-close-action type="button">Cancel</button>
+          <button class="yfd-primary-action" data-structure-template-save="${yfdEscapeAttr(parentId)}" type="button">Add to template</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function openStructureTemplateAddModal(parentId){
+  const parent = getReadyTemplateContainerById(parentId);
+  if(!parent) return;
+
+  closeActionModal();
+  document.body.insertAdjacentHTML('beforeend', renderStructureTemplateAddModal(parentId));
+  setTimeout(() => {
+    const input = document.getElementById('yfdStructureTemplateNames');
+    if(input) input.focus();
+  }, 50);
+}
+
+function parseStructureTemplateNames(text){
+  return String(text || '')
+    .split(',')
+    .map(name => name.trim())
+    .filter(Boolean);
+}
+
+function recordReadyTemplateRootAdd(parentId, item){
+  if(!isReadyTemplateStaticRoot(parentId) || !item) return;
+  if(!Array.isArray(state.readyTemplateAdds)) state.readyTemplateAdds = [];
+
+  const templateId = item.template_id || item.id || '';
+  if(templateId && state.readyTemplateAdds.some(record => record && record.item && (record.item.template_id === templateId || record.item.id === templateId))){
+    return;
+  }
+
+  state.readyTemplateAdds.push({
+    parentId,
+    item:cloneAdminBaseValue(item),
+    equipmentTemplates:item.key && equipmentStore[item.key]
+      ? cloneAdminBaseValue(equipmentStore[item.key])
+      : null
+  });
+}
+
+function ensureReadyTemplateEquipmentStore(item, templates){
+  if(!item || !item.key) return;
+
+  const fallbackTemplates = [{
+    id:item.key + '_instance_1',
+    name:(item.title || 'Equipment') + ' #1'
+  }];
+  const sourceTemplates = Array.isArray(templates) && templates.length
+    ? templates
+    : (Array.isArray(equipmentStore[item.key]) && equipmentStore[item.key].length
+      ? equipmentStore[item.key]
+      : fallbackTemplates);
+
+  const clonedTemplates = cloneAdminBaseValue(sourceTemplates);
+  equipmentStore[item.key] = cloneAdminBaseValue(clonedTemplates);
+  defaultEquipmentStore[item.key] = cloneAdminBaseValue(clonedTemplates);
+}
+
+function syncReadyTemplateEquipmentDefaults(){
+  const visitedContainers = new Set();
+
+  function syncContainer(container){
+    if(!container || !container.id || visitedContainers.has(container.id)) return;
+    visitedContainers.add(container.id);
+
+    (container.items || []).forEach(item => {
+      if(!item) return;
+      if(item.key && isReadyUserCreated(item)){
+        ensureReadyTemplateEquipmentStore(item);
+      }
+
+      const targetNode = item.target ? getReadyTemplateContainerById(item.target) : null;
+      if(targetNode) syncContainer(targetNode);
+    });
+  }
+
+  if(Array.isArray(state.readyTemplateAdds)){
+    state.readyTemplateAdds.forEach(record => {
+      if(!record || !record.item || !record.item.key) return;
+      ensureReadyTemplateEquipmentStore(record.item, record.equipmentTemplates);
+    });
+  }
+
+  getReadyTemplateRootLayers().forEach(syncContainer);
+  getActiveReadyTreeNodes().forEach(syncContainer);
+}
+
+function createStructureTemplateItem(parentId, name, kind, index){
+  const stamp = Date.now() + index;
+  const templateId = 'template_item_' + slugifyCustomKey(parentId + '_' + name + '_' + stamp);
+  const meta = makeReadyUserMeta('structure_template', {template_id:templateId});
+
+  if(kind === 'area'){
+    const targetId = parentId + '_' + slugifyCustomKey(name) + '_template_' + stamp;
+    treeNodes.push({
+      id:targetId,
+      title:name,
+      note:'Added from Structure Templates',
+      ...makeReadyUserMeta('structure_template_container', {template_id:templateId + '_container'}),
+      items:[]
+    });
+
+    return {
+      id:templateId,
+      title:name,
+      type:'Area',
+      note:'Added from Structure Templates',
+      target:targetId,
+      ...meta
+    };
+  }
+
+  const key = 'template_equipment_' + slugifyCustomKey(parentId + '_' + name + '_' + stamp);
+  equipmentStore[key] = [{
+    id:key + '_instance_1',
+    name:name + ' #1'
+  }];
+  defaultEquipmentStore[key] = cloneAdminBaseValue(equipmentStore[key]);
+
+  return {
+    id:templateId,
+    title:name,
+    key,
+    type:'Equipment',
+    note:'Added from Structure Templates',
+    ...meta
+  };
+}
+
+function saveStructureTemplateItems(parentId){
+  const parent = getReadyTemplateContainerById(parentId);
+  const input = document.getElementById('yfdStructureTemplateNames');
+  const selected = document.querySelector('.yfd-structure-template-kind.is-selected');
+  const kind = selected && selected.dataset.structureTemplateKind === 'area' ? 'area' : 'equipment';
+  const names = parseStructureTemplateNames(input ? input.value : '');
+
+  if(!parent || !input) return;
+  if(!names.length){
+    input.focus();
+    return;
+  }
+
+  if(!Array.isArray(parent.items)) parent.items = [];
+
+  names.forEach((name, index) => {
+    const item = createStructureTemplateItem(parentId, name, kind, index);
+    parent.items.push(item);
+    recordReadyTemplateRootAdd(parentId, item);
+  });
+
+  closeActionModal();
+  saveState();
+  renderAdminBaseToolScreen(false);
+}
+
+function handleStructureTemplateEvent(e){
+  const addBtn = e.target && e.target.closest ? e.target.closest('[data-structure-template-add]') : null;
+  const kindBtn = e.target && e.target.closest ? e.target.closest('[data-structure-template-kind]') : null;
+  const saveBtn = e.target && e.target.closest ? e.target.closest('[data-structure-template-save]') : null;
+
+  if(!addBtn && !kindBtn && !saveBtn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+  if(addBtn){
+    openStructureTemplateAddModal(addBtn.dataset.structureTemplateAdd || '');
+    return;
+  }
+
+  if(kindBtn){
+    const group = kindBtn.closest('.yfd-add-item-segments');
+    if(group){
+      group.querySelectorAll('[data-structure-template-kind]').forEach(btn => {
+        btn.classList.toggle('is-selected', btn === kindBtn);
+      });
+    }
+    return;
+  }
+
+  saveStructureTemplateItems(saveBtn.dataset.structureTemplateSave || '');
+}
+
+document.addEventListener('click', handleStructureTemplateEvent, true);
+document.addEventListener('touchend', handleStructureTemplateEvent, true);
 
 
 function renderAdminBaseSectionTabs(active){
@@ -4977,14 +6938,38 @@ function renderAdminBaseSectionTabs(active){
 }
 
 function renderAdminBaseTemplateCard(template){
+  const groups = Array.isArray(template.groups) ? template.groups : [];
+  const itemCount = groups.reduce((sum, group) => sum + ((group.items || []).length), 0);
+  const meta = [
+    template.category || '',
+    template.hull_type || '',
+    template.rig_type || '',
+    template.year || ''
+  ].filter(Boolean).join(' / ');
+
   return `
     <section class="yfd-admin-base-template-card">
       <div>
         <span>Structure template</span>
         <strong>${template.title}</strong>
-        <p>Source: current ready-made motor yacht structure. Full linked preview/editor will be connected later to avoid a second fake template truth.</p>
+        <p>${template.note || 'Template record for ready-made structure generation.'}</p>
+        <div class="yfd-admin-base-template-meta">
+          <b>${meta || 'base template'}</b>
+          <b>${groups.length} groups</b>
+          <b>${itemCount} items</b>
+        </div>
       </div>
     </section>
+  `;
+}
+
+function renderAdminBaseTemplateCatalog(templates){
+  const list = Array.isArray(templates) ? templates : [];
+
+  return `
+    <div class="yfd-admin-base-template-list">
+      ${list.map(renderAdminBaseTemplateCard).join('')}
+    </div>
   `;
 }
 
@@ -4999,7 +6984,8 @@ function renderAdminBaseSectionContent(section, mainGroups, templates){
           <strong>Structure Templates</strong>
         </div>
 
-        ${(templates || []).map(renderAdminBaseTemplateCard).join('')}
+        ${renderAdminBaseTemplateCatalog(templates)}
+        ${renderStructureTemplateTable()}
       </section>
     `;
   }
@@ -5111,6 +7097,7 @@ function renderWelcomeScreen(){
 
   yfdClearActiveScreen();
   navStack = [];
+  yfdClearForwardStack();
 
   if(module) module.hidden = true;
   if(hero) hero.hidden = false;
@@ -5199,6 +7186,7 @@ function renderFleetScreen(){
 
   yfdClearActiveScreen();
   navStack = [];
+  yfdClearForwardStack();
 
   if(module) module.hidden = true;
   if(hero) hero.hidden = false;
@@ -5316,6 +7304,13 @@ function renderYachtSetupModal(){
             <button data-create-yacht-method="ready_motor" type="button">Use ready-made structure</button>
           </article>
 
+          <article class="yfd-template-card is-primary" data-ready-sailing-so439-method hidden>
+            <span>Sailing prototype</span>
+            <h3>Jeanneau SO439 - 2023</h3>
+            <p>Ready-made sailing monohull with Bermudan sloop rig sections and the SO439 hull/deck systems.</p>
+            <button data-create-yacht-method="${SO439_READY_METHOD}" type="button">Use Jeanneau template</button>
+          </article>
+
           <article class="yfd-template-card">
             <span>Custom</span>
             <h3>Build from scratch</h3>
@@ -5348,17 +7343,28 @@ function openYachtSetupModal(){
 function updateYachtSetupStartMethods(){
   const vesselType = getYachtSetupValue('[data-yacht-type]', 'data-yacht-type', 'motor');
   const hullCount = Number(getYachtSetupValue('[data-yacht-hulls]', 'data-yacht-hulls', '1')) || 1;
-  const readyCard = document.querySelector('[data-ready-motor-method]');
-  const readyBtn = document.querySelector('[data-create-yacht-method="ready_motor"]');
+  const rig = getYachtSetupValue('[data-yacht-rig]', 'data-yacht-rig', 'bermudan_sloop');
+  const readyMotorCard = document.querySelector('[data-ready-motor-method]');
+  const readyMotorBtn = document.querySelector('[data-create-yacht-method="ready_motor"]');
+  const readySailingCard = document.querySelector('[data-ready-sailing-so439-method]');
+  const readySailingBtn = document.querySelector(`[data-create-yacht-method="${SO439_READY_METHOD}"]`);
   const note = document.querySelector('[data-coming-template-note]');
-  const available = vesselType === 'motor' && hullCount === 1;
+  const motorAvailable = vesselType === 'motor' && hullCount === 1;
+  const sailingSo439Available = vesselType === 'sailing' && hullCount === 1 && rig === 'bermudan_sloop';
 
-  if(readyCard) readyCard.classList.toggle('is-disabled', !available);
-  if(readyBtn){
-    readyBtn.disabled = !available;
-    readyBtn.textContent = available ? 'Use ready-made structure' : 'Coming soon';
+  if(readyMotorCard){
+    readyMotorCard.hidden = !motorAvailable;
+    readyMotorCard.classList.toggle('is-disabled', !motorAvailable);
   }
-  if(note) note.hidden = available;
+  if(readyMotorBtn) readyMotorBtn.disabled = !motorAvailable;
+
+  if(readySailingCard){
+    readySailingCard.hidden = !sailingSo439Available;
+    readySailingCard.classList.toggle('is-disabled', !sailingSo439Available);
+  }
+  if(readySailingBtn) readySailingBtn.disabled = !sailingSo439Available;
+
+  if(note) note.hidden = motorAvailable || sailingSo439Available;
 }
 
 function getYachtSetupValue(selector, attr, fallback){
@@ -5368,12 +7374,13 @@ function getYachtSetupValue(selector, attr, fallback){
 
 function submitYachtSetup(method='scratch'){
   const name = document.getElementById('yfdYachtName')?.value || '';
-  const vesselType = getYachtSetupValue('[data-yacht-type]', 'data-yacht-type', 'motor');
-  const hullCount = Number(getYachtSetupValue('[data-yacht-hulls]', 'data-yacht-hulls', '1')) || 1;
-  const rig = vesselType === 'sailing' ? getYachtSetupValue('[data-yacht-rig]', 'data-yacht-rig', 'bermudan_sloop') : null;
+  const isSo439 = method === SO439_READY_METHOD;
+  const vesselType = isSo439 ? 'sailing' : getYachtSetupValue('[data-yacht-type]', 'data-yacht-type', 'motor');
+  const hullCount = isSo439 ? 1 : (Number(getYachtSetupValue('[data-yacht-hulls]', 'data-yacht-hulls', '1')) || 1);
+  const rig = vesselType === 'sailing' ? (isSo439 ? 'bermudan_sloop' : getYachtSetupValue('[data-yacht-rig]', 'data-yacht-rig', 'bermudan_sloop')) : null;
 
   createYachtFromQuickSetup({
-    name,
+    name:name || (isSo439 ? SO439_TEMPLATE_TITLE : ''),
     vesselType,
     hullCount,
     rig,
@@ -5389,7 +7396,12 @@ function submitYachtSetup(method='scratch'){
       registration:document.getElementById('yfdYachtRegistration')?.value || '',
       registrationExpiry:document.getElementById('yfdYachtExpiry')?.value || '',
       startMethod:method,
-      template:method === 'ready_motor' ? 'ready_motor_yacht_structure' : 'scratch'
+      template:method === 'ready_motor' ? 'ready_motor_yacht_structure' : (isSo439 ? SO439_TEMPLATE_KEY : 'scratch'),
+      templateTitle:isSo439 ? SO439_TEMPLATE_TITLE : '',
+      manufacturer:isSo439 ? 'Jeanneau' : '',
+      model:isSo439 ? 'Sun Odyssey 439' : '',
+      templateYear:isSo439 ? '2023' : '',
+      rigSubtype:isSo439 ? 'fractional_sloop' : ''
     }
   });
 
@@ -5520,10 +7532,8 @@ function renderReadyMadeYachtScreen(push=true){
   overview.classList.add('yfd-ready-overview');
   const visibleLayers = getVisibleLayers();
 
-  const sailingRootIds = ['spar','rigging','sails'];
-
-  const sailingLayers = visibleLayers.filter(layer => sailingRootIds.includes(layer.id));
-  const structureLayers = visibleLayers.filter(layer => !sailingRootIds.includes(layer.id));
+  const sailingLayers = visibleLayers.filter(layer => layer.is_sailing_root);
+  const structureLayers = visibleLayers.filter(layer => !layer.is_sailing_root);
 
   overview.innerHTML = `
     <section class="yfd-ready-head yfd-ready-head-compact">
@@ -5572,7 +7582,7 @@ function openActiveYacht(){
   state.builderHullCount = yacht.hullCount || state.builderHullCount || 1;
   saveState();
 
-  if(yacht.startMethod === 'ready_motor' || (yacht.meta && yacht.meta.template === 'ready_motor_yacht_structure')){
+  if(isReadyYacht(yacht)){
     renderReadyMadeYachtScreen(true);
     return;
   }
@@ -5590,6 +7600,7 @@ function renderOverview(){
   const hero = document.querySelector('.yfd-hero');
 
   navStack = [];
+  yfdClearForwardStack();
 
   if(!overview) return;
   if(module) module.hidden = true;
@@ -5642,7 +7653,7 @@ function addCustomModule(deckId){
 }
 
 function findNodeById(id){
-  return treeNodes.find(n => n.id === id);
+  return getActiveReadyTreeNodes().find(n => n.id === id);
 }
 
 function slugifyCustomKey(text){
@@ -5732,24 +7743,48 @@ function addCustomItem(moduleId, name, itemType){
 
 
 
-function getReadyLibraryGroups(){
-  const mainGroups = getAdminBaseMainEquipmentGroups()
+function getAdminBaseLibraryGroupsForScope(scope, rootId){
+  if(scope === 'sailing_rig'){
+    const rigId = getActiveSailingRigId();
+    const groups = getAdminBaseSailingRigGroups(rigId).slice();
+
+    if(rootId){
+      const exact = groups.filter(group => group && group.id === rootId);
+      return exact.length ? exact : [];
+    }
+
+    return groups;
+  }
+
+  return getAdminBaseReadyLibraryGroups();
+}
+
+function mapAdminBaseGroupsToReadyLibrary(groups){
+  return (groups || [])
     .map(group => ({
       id:group.id,
       title:group.title,
-      source:'admin_base_main',
+      source:group.rig_type ? 'admin_base_sailing' : 'admin_base_main',
       items:(group.items || []).map(item => ({
         id:'adminbase:' + group.id + ':' + item.id,
         raw_id:item.id,
         group_id:group.id,
         title:item.title,
         category:item.category || group.title,
-        source:'admin_base_main'
+        source:group.rig_type ? 'admin_base_sailing' : 'admin_base_main'
       }))
     }))
     .filter(group => group.items.length);
+}
+
+function getReadyLibraryGroups(opts){
+  const o = opts || {};
+  const scope = o.scope === 'sailing_rig' ? 'sailing_rig' : 'main';
+  const mainGroups = mapAdminBaseGroupsToReadyLibrary(getAdminBaseLibraryGroupsForScope(scope, o.rootId || ''));
 
   if(mainGroups.length) return mainGroups;
+
+  if(scope === 'sailing_rig') return [];
 
   return equipmentLibrary.categories.map(cat => ({
     id:cat.id,
@@ -5764,6 +7799,14 @@ function getReadyLibraryGroups(){
       source:'legacy_library'
     }))
   })).filter(group => group.items.length);
+}
+
+function getBuilderLibraryGroupsForTarget(targetType, targetId){
+  if(targetType === 'sailing_root'){
+    return getReadyLibraryGroups({scope:'sailing_rig', rootId:targetId});
+  }
+
+  return getReadyLibraryGroups({scope:'main'});
 }
 
 function findReadyLibraryBridgeItem(bridgeId){
@@ -5787,7 +7830,7 @@ function findReadyLibraryBridgeItem(bridgeId){
       title:item.title,
       category:item.category || group.title,
       key:slugifyCustomKey(group.id + '-' + item.title),
-      source:'admin_base_main'
+      source:group.rig_type ? 'admin_base_sailing' : 'admin_base_main'
     };
   }
 
@@ -5840,7 +7883,7 @@ function createReadyEquipmentItemFromLibrary(libraryItemId){
     library_ref:bridgeItem.id,
     library_source:bridgeItem.source,
     library_group_id:bridgeItem.group_id,
-    ...makeReadyUserMeta(bridgeItem.source === 'admin_base_main' ? 'admin_base_main' : 'equipment_library')
+    ...makeReadyUserMeta(bridgeItem.source && bridgeItem.source.indexOf('admin_base') === 0 ? bridgeItem.source : 'equipment_library')
   };
 }
 
@@ -5932,16 +7975,17 @@ function selectReadyLibraryItem(btn){
 function findAdminBaseMainGroup(groupId){
   if(!groupId) return null;
 
-  const all = []
-    .concat(adminBaseDraft.motorYachtGroups || [])
-    .concat(adminBaseDraft.sharedGroups || []);
+  return getAdminBaseEditableGroups().find(group => group && group.id === groupId) || null;
+}
 
-  return all.find(group => group && group.id === groupId) || null;
+function getAdminBaseGroupScopeLabel(group){
+  return group && group.rig_type ? 'Sailing Rig Base' : 'Main Equipment Base';
 }
 
 function openAdminBaseBulkAddModal(groupId){
   const group = findAdminBaseMainGroup(groupId);
   if(!group) return;
+  const scopeLabel = getAdminBaseGroupScopeLabel(group);
 
   closeActionModal();
 
@@ -5950,7 +7994,7 @@ function openAdminBaseBulkAddModal(groupId){
       <section class="yfd-action-modal yfd-admin-base-bulk-modal">
         <div class="yfd-action-head">
           <div>
-            <span>Main Equipment Base</span>
+            <span>${scopeLabel}</span>
             <strong>Add to ${group.title}</strong>
           </div>
           <button class="yfd-modal-close" data-close-action type="button">×</button>
@@ -6023,6 +8067,7 @@ function openAdminBaseEditItemModal(groupId, itemId){
   if(!found.group || !found.item) return;
 
   const title = String(found.item.title || '').replace(/"/g, '&quot;');
+  const scopeLabel = getAdminBaseGroupScopeLabel(found.group);
 
   closeActionModal();
 
@@ -6031,7 +8076,7 @@ function openAdminBaseEditItemModal(groupId, itemId){
       <section class="yfd-action-modal yfd-admin-base-edit-modal">
         <div class="yfd-action-head">
           <div>
-            <span>Main Equipment Base</span>
+            <span>${scopeLabel}</span>
             <strong>Edit item</strong>
           </div>
           <button class="yfd-modal-close" data-close-action type="button">×</button>
@@ -6083,20 +8128,21 @@ function renderAdminBaseDeleteItemModal(groupId, itemId){
   if(!found.group || !found.item) return '';
 
   const title = found.item.title || 'this item';
+  const scopeLabel = getAdminBaseGroupScopeLabel(found.group);
 
   return `
     <div class="yfd-action-backdrop" data-action-backdrop>
       <section class="yfd-action-modal yfd-admin-base-delete-modal">
         <div class="yfd-action-head">
           <div>
-            <span>Main Equipment Base</span>
+            <span>${scopeLabel}</span>
             <strong>Delete item</strong>
           </div>
           <button class="yfd-modal-close" data-close-action type="button">×</button>
         </div>
 
         <div class="yfd-service-hook">
-          <p>This removes only this item from the editable Main Equipment Base draft.</p>
+          <p>This removes only this item from the editable demo base draft.</p>
           <p><strong>${title}</strong></p>
         </div>
 
@@ -6368,7 +8414,7 @@ function renderReadyEditButton(ref){
 }
 
 function findReadyOverrideTarget(ref){
-  const layers = [...getAllLayers(), ...treeNodes];
+  const layers = [...getAllLayers(), ...getActiveReadyTreeNodes()];
 
   for(const layer of layers){
     if(layer.id === ref) return {kind:'layer', layer, ref};
@@ -6587,7 +8633,7 @@ function findReadyUserItem(parentId, itemRef){
 function isEquipmentKeyUsedElsewhere(key, ignoredItem){
   if(!key) return false;
 
-  const layers = [...getAllLayers(), ...treeNodes];
+  const layers = [...getAllLayers(), ...getActiveReadyTreeNodes()];
 
   for(const layer of layers){
     for(const item of (layer.items || [])){
@@ -6638,6 +8684,27 @@ function openReadyUserItemDeleteModal(parentId, itemRef){
   document.body.insertAdjacentHTML('beforeend', renderReadyUserItemDeleteModal(parentId, itemRef));
 }
 
+function refreshAfterReadyUserDelete(parentId){
+  const current = navStack[navStack.length - 1];
+
+  if(current && current.screen === 'admin_base_tool'){
+    renderAdminBaseToolScreen(false);
+    return;
+  }
+
+  if(current && current.screen === 'ready_yacht'){
+    renderReadyMadeYachtScreen(false);
+    return;
+  }
+
+  if(current && current.screen === 'module'){
+    renderModule(current.id, false);
+    return;
+  }
+
+  renderModule(parentId, false);
+}
+
 function deleteReadyUserItem(parentId, itemRef){
   const found = findReadyUserItem(parentId, itemRef);
   const item = found.item;
@@ -6647,8 +8714,16 @@ function deleteReadyUserItem(parentId, itemRef){
 
   const targetId = item.target || '';
   const key = item.key || '';
+  const templateId = item.template_id || item.id || '';
 
   found.parent.items.splice(found.index, 1);
+
+  if(templateId && Array.isArray(state.readyTemplateAdds)){
+    state.readyTemplateAdds = state.readyTemplateAdds.filter(record => {
+      const recordItem = record && record.item;
+      return !(recordItem && (recordItem.template_id === templateId || recordItem.id === templateId));
+    });
+  }
 
   if(targetId){
     const targetNode = findNodeById(targetId);
@@ -6660,11 +8735,12 @@ function deleteReadyUserItem(parentId, itemRef){
 
   if(key && equipmentStore[key] && !isEquipmentKeyUsedElsewhere(key, item)){
     delete equipmentStore[key];
+    if(defaultEquipmentStore[key]) delete defaultEquipmentStore[key];
   }
 
   closeActionModal();
   saveState();
-  renderModule(parentId, false);
+  refreshAfterReadyUserDelete(parentId);
 }
 
 function handleReadyUserItemDeleteCaptureEvent(e){
@@ -6795,7 +8871,7 @@ function renderModule(id, push=true){
 function resolveEquipmentKey(title){
   let itemKey = title;
 
-  const match = [...getAllLayers(), ...treeNodes]
+  const match = [...getAllLayers(), ...getActiveReadyTreeNodes()]
     .flatMap(x => x.items || [])
     .find(i => i.title === title && i.key);
 
@@ -7326,7 +9402,8 @@ document.addEventListener('touchend', handleReadyEditSaveControlEvent, true);
 function handleBuilderEditControlEvent(e){
   const editBtn = e.target && e.target.closest ? e.target.closest('[data-builder-edit]') : null;
   const saveBtn = e.target && e.target.closest ? e.target.closest('[data-save-builder-edit]') : null;
-  if(!editBtn && !saveBtn) return;
+  const clearBtn = e.target && e.target.closest ? e.target.closest('[data-clear-builder-edit]') : null;
+  if(!editBtn && !saveBtn && !clearBtn) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -7339,6 +9416,11 @@ function handleBuilderEditControlEvent(e){
 
   if(saveBtn){
     saveBuilderEdit(saveBtn.dataset.builderEditType || 'area', saveBtn.dataset.saveBuilderEdit || '');
+    return;
+  }
+
+  if(clearBtn){
+    clearBuilderEdit(clearBtn.dataset.builderEditType || 'area', clearBtn.dataset.clearBuilderEdit || '');
     return;
   }
 }
@@ -7405,7 +9487,7 @@ document.addEventListener('click', handleBuilderInstanceDeleteControlEvent, true
 document.addEventListener('touchend', handleBuilderInstanceDeleteControlEvent, true);
 
 function handleAreaLibraryControlEvent(e){
-  const openBtn = e.target && e.target.closest ? e.target.closest('[data-builder-area-library]') : null;
+  const openBtn = e.target && e.target.closest ? e.target.closest('[data-builder-library-open], [data-builder-area-library]') : null;
   const attachBtn = e.target && e.target.closest ? e.target.closest('[data-library-area-attach]') : null;
   const selectBtn = e.target && e.target.closest ? e.target.closest('[data-builder-library-select]') : null;
   const addSelectedBtn = e.target && e.target.closest ? e.target.closest('[data-builder-library-add-selected]') : null;
@@ -7416,7 +9498,13 @@ function handleAreaLibraryControlEvent(e){
   if(e.stopImmediatePropagation) e.stopImmediatePropagation();
 
   if(openBtn){
-    openBuilderAreaLibraryModal(openBtn.dataset.builderAreaLibrary || '');
+    if(openBtn.closest('.yfd-builder-create-item-modal') && builderModalState.childType !== 'equipment'){
+      return;
+    }
+
+    const targetType = openBtn.dataset.builderLibraryOpen || 'area';
+    const targetId = openBtn.dataset.builderLibraryId || openBtn.dataset.builderAreaLibrary || '';
+    openBuilderEquipmentLibraryModal(targetType, targetId);
     return;
   }
 
@@ -7426,11 +9514,12 @@ function handleAreaLibraryControlEvent(e){
   }
 
   if(addSelectedBtn){
-    const areaId = addSelectedBtn.dataset.builderLibraryArea || builderModalState.areaId || '';
+    const targetType = addSelectedBtn.dataset.builderLibraryTargetType || builderModalState.libraryTargetType || 'area';
+    const targetId = addSelectedBtn.dataset.builderLibraryTargetId || addSelectedBtn.dataset.builderLibraryArea || builderModalState.libraryTargetId || builderModalState.areaId || '';
     const itemId = addSelectedBtn.dataset.builderLibrarySelected || '';
     if(!itemId) return;
-    if(yfdBuilderModalDuplicateTap(e, 'builder-area-library-add:' + areaId + ':' + itemId)) return;
-    const ok = attachLibraryEquipmentToArea(areaId, itemId);
+    if(yfdBuilderModalDuplicateTap(e, 'builder-library-add:' + targetType + ':' + targetId + ':' + itemId)) return;
+    const ok = attachLibraryEquipmentToBuilderTarget(targetType, targetId, itemId);
     if(ok) closeBuilderModal();
     return;
   }
@@ -7667,6 +9756,7 @@ function yfdIsPriorityTapTarget(target){
     '.yfd-add-item',
     '.yfd-action-back',
     '.yfd-builder-mini-actions',
+    '.yfd-object-menu',
     '.yfd-builder-modal',
     '.yfd-builder-modal-actions'
   ].join(','));
@@ -7973,26 +10063,64 @@ function handleBuilderModalActionCaptureEvent(e){
 
   if(confirmDeleteDeck){
     if(yfdBuilderModalDuplicateTap(e, 'delete-deck-confirm')) return;
-    confirmDeleteBuilderDeck();
+    submitBuilderDeleteDeck();
     return;
   }
 
   if(confirmDeleteItem){
     if(yfdBuilderModalDuplicateTap(e, 'delete-item-confirm')) return;
-    confirmDeleteBuilderItem();
+    submitBuilderDeleteItem();
     return;
   }
 
   if(confirmDeleteInstance){
     const id = confirmDeleteInstance.dataset.confirmDeleteBuilderInstance || '';
     if(yfdBuilderModalDuplicateTap(e, 'delete-instance-confirm:' + id)) return;
-    confirmDeleteBuilderInstance(id);
+    deleteBuilderInstance(id);
     return;
   }
 }
 
 document.addEventListener('click', handleBuilderModalActionCaptureEvent, true);
 document.addEventListener('touchend', handleBuilderModalActionCaptureEvent, true);
+
+function handleBuilderAddKindSelectEvent(e){
+  const btn = e.target && e.target.closest ? e.target.closest('[data-builder-kind-select]') : null;
+  if(!btn) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+  if(e.stopImmediatePropagation) e.stopImmediatePropagation();
+
+  const kind = btn.dataset.builderKindSelect === 'area' ? 'area' : 'equipment';
+  builderModalState.childType = kind;
+
+  const group = btn.closest('.yfd-add-item-segments');
+  if(group){
+    group.querySelectorAll('[data-builder-kind-select]').forEach(item => {
+      item.classList.toggle('is-selected', item === btn);
+      item.setAttribute('aria-selected', item === btn ? 'true' : 'false');
+    });
+  }
+
+  const inputId = btn.dataset.builderKindTargetInput || '';
+  const input = inputId ? document.getElementById(inputId) : null;
+  if(input){
+    input.placeholder = btn.dataset.builderKindPlaceholder || '';
+    input.focus();
+  }
+
+  const modal = btn.closest('.yfd-builder-create-item-modal');
+  const libraryBtn = modal ? modal.querySelector('[data-builder-equipment-library-action]') : null;
+  if(libraryBtn){
+    const showLibrary = kind === 'equipment';
+    libraryBtn.hidden = !showLibrary;
+    libraryBtn.disabled = !showLibrary;
+  }
+}
+
+document.addEventListener('click', handleBuilderAddKindSelectEvent, true);
+document.addEventListener('touchend', handleBuilderAddKindSelectEvent, true);
 
 
 let yfdSailingRootLastTapKey = '';
@@ -8179,6 +10307,7 @@ document.addEventListener('click', e => {
   if(yachtRig){
     document.querySelectorAll('[data-yacht-rig]').forEach(btn => btn.classList.remove('is-active'));
     yachtRig.classList.add('is-active');
+    updateYachtSetupStartMethods();
     return;
   }
 
@@ -8195,6 +10324,7 @@ document.addEventListener('click', e => {
     if(yacht){
       state.activeYachtId = yacht.id;
       state.builderHullCount = yacht.hullCount || 1;
+      yfdClearForwardStack();
       saveState();
       openActiveYacht();
     }
@@ -8213,6 +10343,9 @@ document.addEventListener('click', e => {
   const back = e.target.closest('[data-back]');
   if(back){ forceBack(); return; }
 
+  const forward = e.target.closest('[data-forward]');
+  if(forward){ goForward(); return; }
+
   const gallery = e.target.closest('[data-open-gallery]');
   if(gallery){ openGalleryStub(); return; }
 
@@ -8222,6 +10355,7 @@ document.addEventListener('click', e => {
   const openBuilder = e.target.closest('[data-open-builder]');
   if(openBuilder){
     closeConfigModal();
+    yfdClearForwardStack();
     renderCustomBuilderScreenV2();
     return;
   }
@@ -8332,6 +10466,7 @@ document.addEventListener('click', e => {
   const openBuilderArea = e.target.closest('[data-open-builder-area]');
   if(openBuilderArea){
     if(yfdBuilderShouldIgnoreOpenTap()) return;
+    yfdClearForwardStack();
     renderBuilderAreaScreen(openBuilderArea.dataset.openBuilderArea);
     return;
   }
@@ -8372,6 +10507,7 @@ document.addEventListener('click', e => {
   const openBuilderHull = e.target.closest('[data-open-builder-hull]');
   if(openBuilderHull){
     if(yfdBuilderShouldIgnoreOpenTap()) return;
+    yfdClearForwardStack();
     renderBuilderHullScreen(openBuilderHull.dataset.openBuilderHull);
     return;
   }
@@ -8379,6 +10515,7 @@ document.addEventListener('click', e => {
   const openBuilderDeck = e.target.closest('[data-open-builder-deck]');
   if(openBuilderDeck){
     if(yfdBuilderShouldIgnoreOpenTap()) return;
+    yfdClearForwardStack();
     renderBuilderDeckScreen(openBuilderDeck.dataset.openBuilderDeck);
     return;
   }
@@ -8386,6 +10523,7 @@ document.addEventListener('click', e => {
   const builderEquipment = e.target.closest('[data-open-builder-equipment]');
   if(builderEquipment){
     if(yfdBuilderShouldIgnoreOpenTap()) return;
+    yfdClearForwardStack();
     renderBuilderEquipmentScreen(builderEquipment.dataset.openBuilderEquipment);
     return;
   }
