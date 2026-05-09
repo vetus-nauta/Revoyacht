@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>RevoYacht</title>
+  <style>
+    :root{
+      --bg:#06111d;
+      --panel:#112236;
+      --line:rgba(170,207,242,.22);
+      --text:#f2f7ff;
+      --muted:#9fb3c9;
+      --accent:#8ec7ff;
+      --green:#35c66b;
+    }
+
+    *{box-sizing:border-box}
+
+    html,body{
+      min-height:100%;
+      margin:0;
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 20% 10%, rgba(142,199,255,.13), transparent 34%),
+        radial-gradient(circle at 82% 82%, rgba(53,198,107,.10), transparent 28%),
+        linear-gradient(180deg,#081624 0%, var(--bg) 100%);
+      color:var(--text);
+    }
+
+    body{
+      display:grid;
+      place-items:center;
+      padding:28px;
+    }
+
+    main{
+      width:min(760px,100%);
+      min-height:min(560px,calc(100vh - 56px));
+      display:grid;
+      align-content:center;
+      gap:24px;
+      padding:clamp(28px,6vw,56px);
+      border:1px solid var(--line);
+      border-radius:28px;
+      background:linear-gradient(180deg,rgba(17,34,54,.92),rgba(9,21,35,.92));
+      box-shadow:0 28px 90px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      min-width:0;
+    }
+
+    .mark{
+      width:62px;
+      height:62px;
+      display:grid;
+      place-items:center;
+      border-radius:18px;
+      background:#f3f8ff;
+      color:#153253;
+      font-size:34px;
+      font-weight:950;
+      line-height:1;
+      box-shadow:0 16px 36px rgba(0,0,0,.22);
+    }
+
+    h1{
+      margin:0;
+      font-size:clamp(38px,8vw,72px);
+      line-height:.94;
+      letter-spacing:0;
+      font-weight:950;
+    }
+
+    .kicker{
+      margin:0;
+      color:var(--accent);
+      font-size:13px;
+      font-weight:850;
+      letter-spacing:.16em;
+      text-transform:uppercase;
+    }
+
+    p{
+      max-width:58ch;
+      margin:0;
+      color:var(--muted);
+      font-size:clamp(16px,2.5vw,20px);
+      line-height:1.55;
+    }
+
+    .status{
+      display:inline-flex;
+      width:max-content;
+      align-items:center;
+      gap:9px;
+      min-height:38px;
+      padding:0 14px;
+      border:1px solid rgba(53,198,107,.26);
+      border-radius:999px;
+      background:rgba(53,198,107,.09);
+      color:#c9ffdd;
+      font-size:13px;
+      font-weight:850;
+    }
+
+    .status::before{
+      content:"";
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 18px rgba(53,198,107,.72);
+    }
+
+    footer{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 18px;
+      align-items:center;
+      padding-top:10px;
+      color:rgba(224,237,250,.70);
+      font-size:13px;
+      font-weight:760;
+    }
+
+    a{
+      color:#dff0ff;
+      text-decoration:none;
+      border-bottom:1px solid rgba(142,199,255,.32);
+    }
+
+    a:hover{color:#fff}
+
+    @media(max-width:520px){
+      body{padding:14px}
+
+      main{
+        min-height:calc(100vh - 28px);
+        border-radius:22px;
+      }
+
+      .brand{
+        align-items:flex-start;
+      }
+
+      .mark{
+        width:54px;
+        height:54px;
+        border-radius:16px;
+        font-size:30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand" aria-label="RevoYacht">
+      <div class="mark">R</div>
+      <div>
+        <p class="kicker">BRKOVIC SOLUTIONS</p>
+        <h1>RevoYacht</h1>
+      </div>
+    </div>
+
+    <p>
+      Operational yacht structure, equipment and service platform is in private development.
+    </p>
+
+    <div class="status">Project workspace is active</div>
+
+    <footer>
+      <span>BRKOVIC SOLUTIONS</span>
+      <a href="mailto:vetus.nauta@gmail.com">vetus.nauta@gmail.com</a>
+    </footer>
+  </main>
+</body>
+</html>

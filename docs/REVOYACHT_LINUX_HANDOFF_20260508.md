@@ -30,6 +30,12 @@ Current live demo:
 https://brkovic.ltd/yacht-flex-demo/?v=20260508-v40d3d5l-so439-template
 ```
 
+Public placeholder:
+
+```text
+https://brkovic.ltd/revoyacht/
+```
+
 Do not store FTP/server credentials in repo files or handoff files.
 
 ## Clone On Linux
@@ -189,6 +195,12 @@ public_html/yacht-flex-demo/assets/yfd-core.js
 public_html/yacht-flex-demo/assets/yacht-flex.css
 ```
 
+Public placeholder page:
+
+```text
+public_html/revoyacht/index.html
+```
+
 When changing frontend code, update both private and public demo copies, then bump the version query in both index files.
 
 Do not commit local temp screenshots/audits:
@@ -227,4 +239,3 @@ The next engineering step should be template/ready-made synchronization policy:
 - keep this as an admin/developer mode only;
 - users should work with yacht instances, not directly mutate locked system templates;
 - owner/user changes should live in a custom layer, not inside the locked template base.
-

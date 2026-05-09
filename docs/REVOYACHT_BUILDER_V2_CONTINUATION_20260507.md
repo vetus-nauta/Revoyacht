@@ -43,6 +43,12 @@ https://brkovic.ltd/yacht-flex-demo/?v=20260508-v40d3d5k-deep-layout-polish
 https://brkovic.ltd/yacht-flex-demo/?v=20260508-v40d3d5l-so439-template
 ```
 
+Public direct placeholder:
+
+```text
+https://brkovic.ltd/revoyacht/
+```
+
 Current version string:
 
 ```text
@@ -91,6 +97,7 @@ docs/REVOYACHT_LINUX_HANDOFF_20260508.md
 - Motor ready-made layers such as `Hardtop`, `Flybridge`, `Sun Deck` are not shown inside SO439 ready-made.
 - SO439 equipment defaults are registered into the local demo equipment store for the prototype.
 - Structure Templates catalog now lists both the motor example and `Jeanneau SO439 - 2023`; the live mirror reflects the active ready-made tree.
+- Public placeholder page exists at `public_html/revoyacht/index.html` and is deployed to `https://brkovic.ltd/revoyacht/`.
 
 ## 4. Work discipline
 
