@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+reports.sqlite3
+exports/
+attachments/
+deleted/
