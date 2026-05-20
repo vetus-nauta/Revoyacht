@@ -431,18 +431,22 @@ HTML_PAGE = r"""<!doctype html>
       return { items, skipped };
     }
 
-    function importSignedInput() {
+    function syncSignedEntries({ force = false } = {}) {
       const { items, skipped } = parseSignedItems($('notes').value);
       if (!items.length) {
-        setStatus('Не нашел суммы со знаком + или -. Пример: +1500 клиент, -230 топливо');
-        return;
+        if (force) setStatus('Не нашел суммы со знаком + или -. Пример: +1500 клиент, -230 топливо');
+        return false;
       }
-      const onlyBlankStarter = [...$('entries').querySelectorAll('tr')].length === 1 && !collectReport().entries.length;
-      if (onlyBlankStarter) $('entries').innerHTML = '';
+      $('entries').innerHTML = '';
       items.forEach(item => addEntry(item.type, item));
       updateAll();
       const skippedText = skipped.length ? ` Не распознано: ${skipped.join(' | ')}` : '';
-      setStatus(`Добавлено строк: ${items.length}.${skippedText}`);
+      if (force) setStatus(`Обновлено строк: ${items.length}.${skippedText}`);
+      return true;
+    }
+
+    function importSignedInput() {
+      syncSignedEntries({ force: true });
     }
 
     function collectReport() {
@@ -458,7 +462,7 @@ HTML_PAGE = r"""<!doctype html>
         web_id: selectedId ? (reports.find(r => r.id === selectedId)?.web_id || '') : '',
         report_date: $('reportDate').value || today(),
         opening_balance: Number($('openingBalance').value || 0),
-        notes: $('notes').value.trim(),
+        notes: $('notes').value,
         submitted: selectedId ? Boolean(reports.find(r => r.id === selectedId)?.submitted) : false,
         entries
       };
@@ -682,6 +686,7 @@ HTML_PAGE = r"""<!doctype html>
     }
 
     document.addEventListener('input', (e) => {
+      if (e.target.id === 'notes') syncSignedEntries();
       if (['reportDate', 'openingBalance', 'notes'].includes(e.target.id)) updateAll();
     });
     document.querySelectorAll('[data-add]').forEach(btn => btn.addEventListener('click', () => addEntry(btn.dataset.add)));
