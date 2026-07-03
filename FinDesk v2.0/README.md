@@ -4,6 +4,8 @@ FinDesk v2.0 is a clean MVP package for a lightweight financial journal product.
 
 This is not a continuation of the old FinDesk business logic. The old project may be used only as an infrastructure donor: database connection, backend shell, auth, admin shell, deployment setup, file upload, and user/role scaffolding if usable.
 
+**Critical legacy rule:** old FinDesk documentation, logic, tables, entities, categories, reports, dashboards, disciplines, and calculations are not truth for FinDesk v2.0. Read `23-legacy-isolation-rule.md` before using anything from old FinDesk.
+
 The financial core must be rebuilt around two base tables/logics:
 
 1. **Operational table / live journal** — the user writes current financial notes in sequence.
@@ -60,6 +62,7 @@ FinDesk v2.0/
 ├── 06-dictionaries-and-localization.md
 ├── 07-mvp-scope-and-acceptance.md
 ├── 08-codex-implementation-brief.md
+├── 23-legacy-isolation-rule.md
 ├── schemas/
 │   ├── categories.seed.json
 │   └── entry.schema.json
