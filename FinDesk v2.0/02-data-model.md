@@ -119,6 +119,7 @@ Entry types:
 cash_income
 cash_expense
 card_expense
+card_income
 opening_balance
 correction
 info
@@ -152,10 +153,22 @@ id
 workspace_id nullable
 code
 name
+direction: income | expense | movement | mixed
 parent_code nullable
 sort_order
 is_system
 is_active
+```
+
+Direction defines how the category should be treated in reports.
+
+Examples:
+
+```text
+commercial_income => income
+cash_topup_from_card => movement
+crew/fuel/provisions/etc. => expense
+other => expense by default
 ```
 
 Global categories may be copied into workspace categories.
