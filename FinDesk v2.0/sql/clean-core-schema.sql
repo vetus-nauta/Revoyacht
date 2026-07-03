@@ -38,6 +38,7 @@ create table if not exists categories (
   workspace_id uuid references workspaces(id) on delete cascade,
   code text not null,
   name jsonb not null,
+  direction text not null default 'expense' check (direction in ('income', 'expense', 'movement', 'mixed')),
   parent_code text,
   sort_order integer not null default 100,
   is_system boolean not null default false,
