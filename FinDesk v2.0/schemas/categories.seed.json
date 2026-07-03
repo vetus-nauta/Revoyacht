@@ -88,6 +88,7 @@
     "code": "cash_topup_from_card",
     "name": {"ru": "Пополнение cash с карты", "en": "Cash top-up from card"},
     "sort_order": 140,
+    "direction": "movement",
     "keywords": ["снял с карты", "снятие с карты", "банкомат", "atm", "cash withdrawal", "card to cash", "prelievo", "retiro", "Abhebung"]
   },
   {
