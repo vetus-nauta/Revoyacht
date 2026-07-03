@@ -14,6 +14,14 @@ Old FinDesk is not product truth. Its documentation, finance logic, disciplines,
 
 The old project can only donate infrastructure carcass parts after classification and Director approval.
 
+## Hosting and production access rule
+
+Read `../24-secrets-hosting-access-inventory.md` before inspecting env, hosting, FTP, SFTP, SSH, database, deployment, domain, or server-related files.
+
+Sprint 01 must extract a production access inventory from the old project/repository, but must not commit real secret values.
+
+The goal is to know how to connect FinDesk v2.0 to the real production site safely.
+
 ## Director rule
 
 Sprint 01 Director does not write code.
@@ -28,6 +36,9 @@ Director coordinates:
 
 - inspect old FinDesk location and project structure;
 - identify environment/secrets/config needed by new project;
+- inventory hosting/server/account access clues;
+- inventory FTP/SFTP/SSH/deployment clues;
+- inventory domain/DNS/SSL clues;
 - identify reusable infrastructure;
 - classify old parts as donor/safe/unsafe/unknown;
 - isolate old business logic;
@@ -70,26 +81,32 @@ UNKNOWN_REQUIRES_DIRECTOR
 - old UX screens as product direction;
 - old documentation as product truth;
 - old project discipline as v2.0 discipline;
-- any database mixing.
+- any database mixing;
+- committing real FTP/SFTP/SSH/DB/API passwords or private keys.
 
 ## Required outputs
 
 1. Infrastructure donor report.
 2. Keep/rewrite/delete list.
-3. Secrets/env inventory.
-4. Old logic isolation report.
-5. Clean namespace readiness report.
-6. Explicit legacy documentation rejection note.
-7. QA confirmation.
+3. Secrets/env inventory without secret values.
+4. Production access inventory report.
+5. Hosting/deployment/domain/DNS notes.
+6. Old logic isolation report.
+7. Clean namespace readiness report.
+8. Explicit legacy documentation rejection note.
+9. QA confirmation.
 
 ## Exit criteria
 
 Sprint 01 is complete only if:
 
 - safe reusable infrastructure is documented;
+- required production access items are inventoried;
+- missing access items are listed;
 - unsafe old logic is documented;
 - old documentation is explicitly rejected as v2.0 truth;
 - no v2.0 finance core uses old tables/entities;
+- no real secrets are committed;
 - clean project area is ready;
 - Director files final sprint report.
 
@@ -99,9 +116,12 @@ Handoff must include:
 
 - exact reusable infrastructure list;
 - exact files/modules not to touch;
-- environment variables needed;
+- environment variable names needed;
+- where real secrets are stored;
 - database connection notes;
-- deployment notes;
+- hosting/control panel notes;
+- FTP/SFTP/SSH/deployment notes;
+- domain/DNS/SSL notes;
 - rejected legacy logic list;
 - rejected legacy documentation list;
 - blockers.
