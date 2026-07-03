@@ -92,7 +92,8 @@ MVP categories:
 
 ```text
 crew
- dry_dock
+commercial_income
+dry_dock
 berth
 marina_ports
 service_water
@@ -108,6 +109,8 @@ cash_topup_from_card
 other
 ```
 
+`commercial_income` is an income category, not an expense category. It covers income from commercial activity: rental, charter, brokerage/agency commissions, and similar business inflows.
+
 ## Category examples
 
 ### crew
@@ -115,6 +118,14 @@ other
 ```text
 зп, зарплата, аванс, экипаж, crew, salary, captain, hostess, stewardess, помощник капитана, plata, stipendio, sueldo, Gehalt
 ```
+
+### commercial_income
+
+```text
+аренда, чартер, комиссия, комиссионные, агентские, брокерские, прокат, оплата чартера, charter, rental, rent, commission, agency fee, brokerage, booking, commercial income, noleggio, charter fee, commissione, alquiler, chárter, comisión, provizija, najam, iznajmljivanje, zakup, Vermietung, Charter, Provision
+```
+
+Use this category for real income from commercial activity. Do not use it for opening balance, card-to-cash top-up, private replenishment, debt return, or correction unless the description clearly points to commercial revenue.
 
 ### dry_dock
 
