@@ -61,6 +61,22 @@ category: media_comms
 balance_after: null
 ```
 
+### Commercial income
+
+```text
+date: 2026-07-03
+raw_text: +5000 charter deposit
+flow: cash
+direction: in
+entry_type: cash_income
+category: commercial_income
+balance_after: previous_cash_balance + 5000
+```
+
+Use `commercial_income` for income from commercial activity: rental, charter, commissions, brokerage/agency fees, bookings, and similar business inflows.
+
+Do not use `commercial_income` for opening balance, private top-up, cash top-up from card, debt return, or correction unless the description clearly points to commercial revenue.
+
 ### Cash top-up from card
 
 ```text
@@ -104,6 +120,7 @@ source_files
 opening_cash
 discrepancy_with_previous
 external_cash_income
+commercial_income
 cash_expense
 card_expense
 cash_topup_from_card_card_side
@@ -120,6 +137,14 @@ comment
 ```text
 ending_cash = opening_cash + counted_cash_income - counted_cash_expense + corrections
 ```
+
+### Commercial income
+
+```text
+commercial_income = sum(counted income entries where category = commercial_income)
+```
+
+Commercial income is part of counted cash income if received into cash. If later received into another flow, it must remain commercial income by category and income by flow.
 
 ### Card expense
 
@@ -151,6 +176,7 @@ Example categories:
 
 ```text
 crew
+commercial_income
 berth
 marina_ports
 service_water
@@ -165,6 +191,8 @@ admin_legal
 cash_topup_from_card
 other
 ```
+
+Income categories and expense categories can be shown in the same matrix if direction is clearly marked, or split into separate income and expense matrices in reports.
 
 ## Source files
 
