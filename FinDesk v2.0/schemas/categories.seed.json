@@ -6,6 +6,13 @@
     "keywords": ["зп", "зарплата", "аванс", "экипаж", "crew", "salary", "captain", "hostess", "stewardess", "помощник капитана", "plata", "stipendio", "sueldo", "Gehalt"]
   },
   {
+    "code": "commercial_income",
+    "name": {"ru": "Коммерческий приход", "en": "Commercial income"},
+    "sort_order": 15,
+    "direction": "income",
+    "keywords": ["аренда", "чартер", "комиссия", "комиссионные", "агентские", "брокерские", "прокат", "оплата чартера", "charter", "rental", "rent", "commission", "agency fee", "brokerage", "booking", "commercial income", "noleggio", "charter fee", "commissione", "alquiler", "chárter", "comisión", "provizija", "najam", "iznajmljivanje", "zakup", "Vermietung", "Charter", "Provision"]
+  },
+  {
     "code": "dry_dock",
     "name": {"ru": "Сухой док", "en": "Dry dock"},
     "sort_order": 20,
