@@ -11,10 +11,26 @@ Each agent works only inside its domain. If it finds an issue outside its domain
 Every agent must:
 
 1. Read `README.md`.
-2. Read `10-director-and-subagents.md`.
-3. Read its own `agents/*-READ-FIRST.md` file.
-4. Read only the project files relevant to its scope.
-5. Produce a short plan before touching implementation.
+2. Read `23-legacy-isolation-rule.md`.
+3. Read `10-director-and-subagents.md`.
+4. Read its own `agents/*-READ-FIRST.md` file.
+5. Read only the project files relevant to its scope.
+6. Produce a short plan before touching implementation.
+
+## Legacy documentation rule
+
+Agents must not use old FinDesk documentation as product truth.
+
+Old FinDesk is only an infrastructure donor. If an agent needs something from old FinDesk, it must classify it first:
+
+```text
+INFRASTRUCTURE_DONOR
+GENERIC_HELPER
+UNSAFE_LEGACY_LOGIC
+UNKNOWN_REQUIRES_DIRECTOR
+```
+
+Only `INFRASTRUCTURE_DONOR` and approved `GENERIC_HELPER` items may be reused.
 
 ## Report format
 
@@ -60,6 +76,8 @@ Forbidden:
 
 - large rewrites without Director approval;
 - old dashboard resurrection;
+- old FinDesk documentation as truth;
+- old finance tables/entities/calculations reused as v2.0 core;
 - new dependencies without reason;
 - visual redesign during foundation pass;
 - hidden arithmetic changes;
@@ -73,6 +91,8 @@ If specs conflict:
 2. Record the conflict.
 3. Suggest resolution.
 4. Wait for Director decision.
+
+If old FinDesk conflicts with FinDesk v2.0 docs, FinDesk v2.0 docs win.
 
 ## Acceptance behavior
 
