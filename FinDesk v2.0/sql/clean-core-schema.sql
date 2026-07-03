@@ -2,6 +2,8 @@
 -- Source of truth: entries operational journal
 -- Summary reports are generated from entries
 
+create extension if not exists pgcrypto;
+
 create table if not exists workspaces (
   id uuid primary key default gen_random_uuid(),
   name text not null,
